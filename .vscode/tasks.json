@@ -1,0 +1,89 @@
+{
+  // See https://go.microsoft.com/fwlink/?LinkId=733558
+  // for the documentation about the tasks.json format
+  "version": "2.0.0",
+  "inputs": [
+    {
+      "id": "relativePath",
+      "type": "promptString",
+      "default": ".",
+      "description": "Relateve path of test project..."
+    }
+  ],
+  "tasks": [
+    {
+      "label": "build",
+      "command": "dotnet",
+      "type": "shell",
+      "args": ["cake", "--target", "build"],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "revealProblems": "onProblem"
+      },
+      // "problemMatcher": "$msCompile",
+      "detail": "Builds the solution ⚙️",
+      "icon": {
+        "color": "terminal.ansiGreen"
+      }
+    },
+    {
+      "label": "test",
+      "command": "dotnet",
+      "type": "shell",
+      "args": ["cake", "--target", "test"],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "revealProblems": "onProblem"
+      },
+      // "problemMatcher": "$msCompile",
+      "detail": "Tests the solution 🧪",
+      "icon": {
+        "color": "terminal.ansiYellow"
+      }
+    },
+    {
+      "label": "code-coverage",
+      "command": "./scripts/code-coverage.sh",
+      "type": "shell",
+      "icon": {
+        "color": "terminal.ansiMagenta",
+        "id": "coverage"
+      },
+      "args": ["'${input:relativePath}'"],
+      "group": {
+        "kind": "none"
+      },
+      "presentation": {
+        "reveal": "always",
+        "revealProblems": "onProblem"
+      },
+      "problemMatcher": "$msCompile",
+      "detail": "Runs code coverage 🧑‍💻"
+    },
+    {
+      "label": "coverage-report",
+      "command": "./scripts/code-coverage-report.sh",
+      "type": "shell",
+      "icon": {
+        "color": "terminal.ansiBlue",
+        "id": "report"
+      },
+      "group": {
+        "kind": "none"
+      },
+      "presentation": {
+        "reveal": "always"
+      },
+      "problemMatcher": "$msCompile",
+      "detail": "Runs code coverage report generation 📝"
+    }
+  ]
+}
