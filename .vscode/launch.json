@@ -1,4 +1,26 @@
 {
   "version": "0.2.0",
-  "configurations": []
+  "configurations": [
+    {
+      "name": "debug",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/src/Dependify.Cli/bin/Debug/net8.0/Dependify.Cli.dll",
+      "args": [
+        "graph",
+        "scan",
+        "C:/Users/Oleksii_Nikiforov/dev/presales-cloud/tests/smoke",
+        "-f",
+        "net8",
+        "-o",
+        "./example.json"
+      ],
+      "cwd": "${workspaceFolder}",
+      "stopAtEntry": false,
+      "console": "externalTerminal",
+      "env": {
+      }
+    }
+  ]
 }

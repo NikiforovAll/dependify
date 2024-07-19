@@ -202,7 +202,7 @@ csharp_style_var_when_type_is_apparent = true:warning
 csharp_style_var_elsewhere = true:warning
 # Expression-bodied members
 # https://docs.microsoft.com/visualstudio/ide/editorconfig-language-conventions#expression-bodied-members
-csharp_style_expression_bodied_methods = true:warning
+csharp_style_expression_bodied_methods = true:silent
 csharp_style_expression_bodied_constructors = true:warning
 csharp_style_expression_bodied_operators = true:warning
 csharp_style_expression_bodied_properties = true:warning
@@ -468,3 +468,9 @@ dotnet_diagnostic.IDE0130.severity = suggestion
 
 # CA1062: Validate arguments of public methods
 dotnet_diagnostic.CA1062.severity = suggestion
+
+# CS1591: Missing XML comment for publicly visible type or member
+dotnet_diagnostic.CS1591.severity = suggestion
+
+# IDE0022: Use expression body for method
+dotnet_diagnostic.IDE0022.severity = silent

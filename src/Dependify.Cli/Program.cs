@@ -1,3 +1,6 @@
+using Dependify.Core;
+using Microsoft.Extensions.Logging;
+
 var app = new CommandApp(ConfigureServices(out var configuration));
 
 app.Configure(config =>
@@ -5,9 +8,13 @@ app.Configure(config =>
     config.AddBranch(
         "graph",
         c =>
-            c.AddCommand<GenerateDependenciesCommand>("generate")
+        {
+            c.AddCommand<GenerateDependenciesCommand>("show")
                 .WithDescription("Generates a plan for the dependencies of a project or solution.")
-                .WithExample("graph", "generate", "./path/to/project")
+                .WithExample("graph", "show", "./path/to/project");
+
+            c.AddCommand<ScanCommand>("scan");
+        }
     );
 
 #if DEBUG
@@ -23,15 +30,29 @@ if (args.Length == 0)
 
 return app.Run(args);
 
-static TypeRegistrar ConfigureServices(out IConfiguration configuration)
+TypeRegistrar ConfigureServices(out IConfiguration configuration)
 {
     var services = new ServiceCollection();
 
     using var configurationManager = new ConfigurationManager();
 
+    var logLevelArg = args.Contains("--log-level")
+        ? args.SkipWhile(a => a is not "--log-level").FirstOrDefault()
+        : LogLevel.None.ToString();
+
+    if (!Enum.TryParse<LogLevel>(logLevelArg, out var logLevel))
+    {
+        logLevel = LogLevel.None;
+    }
+
     configuration = configurationManager.AddEnvironmentVariables("DEPENDIFY_").Build();
 
     services.AddSingleton<IConfiguration>(configuration);
+    services.AddSingleton<ProjectLocator>();
+    services.AddSingleton<MsBuildService>();
+    services.AddSingleton<FormatterFactory>();
+
+    services.AddLogging(builder => builder.AddSimpleConsole().SetMinimumLevel(logLevel));
 
     return new TypeRegistrar(services);
 }

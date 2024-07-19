@@ -15,6 +15,25 @@
       "label": "build",
       "command": "dotnet",
       "type": "shell",
+      "args": ["build"],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "presentation": {
+        "reveal": "always",
+        "revealProblems": "onProblem"
+      },
+      // "problemMatcher": "$msCompile",
+      "detail": "Builds the solution ⚙️",
+      "icon": {
+        "color": "terminal.ansiGreen"
+      }
+    },
+    {
+      "label": "cake:build",
+      "command": "dotnet",
+      "type": "shell",
       "args": ["cake", "--target", "build"],
       "group": {
         "kind": "build",
@@ -31,7 +50,7 @@
       }
     },
     {
-      "label": "test",
+      "label": "cake:test",
       "command": "dotnet",
       "type": "shell",
       "args": ["cake", "--target", "test"],
