@@ -43,11 +43,26 @@ internal class ScanCommand(
     private void DisplayProjects(ScanCommandSettings settings, IEnumerable<Node> nodes, string prefix)
     {
         var graph = DoSomeWork(
-            () =>
-                msBuildService.AnalyzeReferences(
+            ctx =>
+            {
+                msBuildService.SetDiagnosticSource(
+                    new(
+                        project => ctx?.Status($"[yellow]Loading...[/] [grey]{project.Path}[/]"),
+                        project =>
+                        {
+                            if (ctx is not null)
+                            {
+                                AnsiConsole.MarkupLine($"[green] Loaded: [/] [grey]{project.ProjectFilePath}[/]");
+                            }
+                        }
+                    )
+                );
+
+                return msBuildService.AnalyzeReferences(
                     nodes.OfType<ProjectReferenceNode>(),
                     new(settings.IncludePackages!.Value, settings.FullScan!.Value, settings.Framework)
-                ),
+                );
+            },
             $"Analyzing {prefix}...",
             settings
         );
@@ -75,11 +90,26 @@ internal class ScanCommand(
         foreach (var solution in solutionNodes.Where(n => selectedSolutions.Contains(n.Id)))
         {
             var graph = DoSomeWork(
-                () =>
-                    msBuildService.AnalyzeReferences(
+                ctx =>
+                {
+                    msBuildService.SetDiagnosticSource(
+                        new(
+                            project => ctx?.Status($"[yellow]Loading...[/] [grey]{project.Path}[/]"),
+                            project =>
+                            {
+                                if (ctx is not null)
+                                {
+                                    AnsiConsole.MarkupLine($"[green] Loaded: [/] [grey]{project.ProjectFilePath}[/]");
+                                }
+                            }
+                        )
+                    );
+
+                    return msBuildService.AnalyzeReferences(
                         solution,
                         new(settings.IncludePackages!.Value, settings.FullScan!.Value, settings.Framework)
-                    ),
+                    );
+                },
                 $"Analyzing {solution.Id}...",
                 settings
             );
@@ -87,14 +117,34 @@ internal class ScanCommand(
         }
     }
 
-    private static T DoSomeWork<T>(Func<T> func, string message, ScanCommandSettings settings)
+    private static T DoSomeWork<T>(Func<StatusContext?, T> func, string message, ScanCommandSettings settings)
     {
-        if (settings.LogLevel is LogLevel.None)
+        if (!settings.Interactive!.Value)
         {
-            return AnsiConsole.Status().Start(message, _ => func());
+            return func(null);
         }
 
-        return func();
+        if (
+            (settings.LogLevel is LogLevel.None && settings.Format is OutputFormat.Tui)
+            || (!string.IsNullOrWhiteSpace(settings.OutputPath))
+        )
+        {
+            return AnsiConsole
+                .Status()
+                .AutoRefresh(true)
+                .Spinner(Spinner.Known.Dots)
+                .Start(
+                    message,
+                    ctx =>
+                    {
+                        var result = func(ctx);
+
+                        return result;
+                    }
+                );
+        }
+
+        return func(null);
     }
 
     private static string GetFullPath(ScanCommandSettings settings)
@@ -134,19 +184,42 @@ internal class ScanCommand(
 
             nodes = nodes.OrderByDescending(n => n.Type).ThenBy(n => n.DirectoryPath);
 
-            table.AddColumn("Name");
-            table.AddColumn("Type");
-            table.AddColumn("Dependencies (d/a) count");
-            // TODO: consider using text TextPath(
-            table.AddColumn($"Path {prefix}");
+            // TODO: refactor
+
+            table.AddColumn("[italic]Name[/]");
+            table.AddColumn("[italic]Type[/]");
+            table.AddColumn(
+                new TableColumn(
+                    "[italic]Depends On ([darkgreen]projects[/]/[royalblue1]packages[/]) count[/]"
+                ).Centered()
+            );
+            table.AddColumn(new TableColumn("[italic]Used By ([darkgreen]projects[/]) count[/]").Centered());
+            table.AddColumn($"Path [italic]{prefix}[/]");
 
             foreach (var node in nodes)
             {
                 var displayPath = node.Path.RemovePrefix(prefix).TrimStart('/', '\\');
-                var descendantsCount = graph.FindDescendants(node).Count();
-                var ascendantsCount = graph.FindAscendants(node).Count();
+                var descendants = graph.FindDescendants(node);
+                var ascendantsCount = graph.FindAscendants(node).OfType<ProjectReferenceNode>().Count();
 
-                table.AddRow(node.Id, node.Type, $"{descendantsCount}/{ascendantsCount}", displayPath);
+                var type = node.Type switch
+                {
+                    "Project" => "[aquamarine3]Project[/]",
+                    "Solution" => "[red3]Solution[/]",
+                    "Package" => "[skyblue1]Package[/]",
+                    _ => "Unknown"
+                };
+
+                var packagesCountLabel = settings.IncludePackages!.Value
+                    ? $"/[royalblue1]{descendants.OfType<PackageReferenceNode>().Count()}[/]"
+                    : string.Empty;
+
+                var descendantsLabel = node.Type is not "Package"
+                    ? $"[darkgreen]{descendants.OfType<ProjectReferenceNode>().Count()}{packagesCountLabel}[/]"
+                    : string.Empty;
+
+                var ascendantsLabel = node.Type is not "Package" ? $"[darkgreen]{ascendantsCount}[/]" : string.Empty;
+                table.AddRow(node.Id, type, descendantsLabel, ascendantsLabel, displayPath);
             }
 
             AnsiConsole.Write(table);

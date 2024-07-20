@@ -10,6 +10,13 @@ public record MsBuildConfig(bool IncludePackages = false, bool FullScan = false,
 
 public class MsBuildService(ILogger<MsBuildService> logger, ILoggerFactory loggerFactory)
 {
+    private MsBuildServiceListener? listener;
+
+    public void SetDiagnosticSource(MsBuildServiceListener listener)
+    {
+        this.listener = listener;
+    }
+
     public DependencyGraph AnalyzeReferences(SolutionReferenceNode solution, MsBuildConfig config)
     {
         var analyzerManager = new AnalyzerManager(
@@ -84,6 +91,8 @@ public class MsBuildService(ILogger<MsBuildService> logger, ILoggerFactory logge
 
         logger.LogInformation("Analyzing project {Project}", projectNode.Path);
 
+        this.listener?.OnProjectLoading?.Invoke(projectNode);
+
         var analyzeResults = string.IsNullOrEmpty(framework)
             ? projectAnalyzer.Build()
             : projectAnalyzer.Build(framework);
@@ -94,6 +103,7 @@ public class MsBuildService(ILogger<MsBuildService> logger, ILoggerFactory logge
 
         _ = analyzerResult ?? throw new InvalidOperationException("Unable to load project.");
 
+        this.listener?.OnProjectLoaded?.Invoke(analyzerResult);
         builder.WithNode(projectNode, true);
 
         foreach (var reference in analyzerResult.ProjectReferences)
@@ -116,4 +126,10 @@ public class MsBuildService(ILogger<MsBuildService> logger, ILoggerFactory logge
             }
         }
     }
+}
+
+public class MsBuildServiceListener(Action<ProjectReferenceNode >? projectLoading, Action<IAnalyzerResult>? projectLoaded)
+{
+    public Action<ProjectReferenceNode >? OnProjectLoading { get; init; } = projectLoading;
+    public Action<IAnalyzerResult>? OnProjectLoaded { get; init; } = projectLoaded;
 }

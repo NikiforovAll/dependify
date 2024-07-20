@@ -12,7 +12,7 @@ public sealed record PackageReferenceNode : Node
         }
         this.Id = name;
         this.Version = version;
-        this.Path = $"https://www.nuget.org/packages/{name}";
+        this.Path = $"https://www.nuget.org/packages/{name}/{version}";
     }
 
     public override string Type { get; } = "Package";

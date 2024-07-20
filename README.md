@@ -1,7 +1,7 @@
 # Dependify
 
 [![Build](https://github.com/NikiforovAll/dependify/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/NikiforovAll/dependify/actions/workflows/build.yml)
-[![NuGet](https://img.shields.io/nuget/dt/Dependify.Tool.svg)](https://nuget.org/packages/Dependify.Tool)
+[![NuGet](https://img.shields.io/nuget/dt/Dependify.Cli.svg)](https://nuget.org/packages/Dependify.Cli)
 [![contributionswelcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/nikiforovall/dependify)
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg)](https://conventionalcommits.org)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/nikiforovall/dependify/blob/main/LICENSE.md)
@@ -10,14 +10,22 @@
 ## Install
 
 ```bash
-dotnet tool install -g Dependify.Tool
+dotnet tool install -g Dependify.Cli
 ```
 
 ## Example
 
 ```bash
+dotnet run --project ./src/Dependify.Cli/ -- \
+    graph scan $dev/ keycloak-authorization-services-dotnet/ \
+    --framework net8
+```
+
+![tui-demo1](./assets/tui-demo1.png)
+
+```bash
 dotnet run --project ./src/Dependify.Cli/ \
-    -- graph scan $dev/ keycloak-authorization-services-dotnet/ \
+    graph scan $dev/ keycloak-authorization-services-dotnet/ \
     --exclude-sln \
     --framework net8 \
     --format mermaid \

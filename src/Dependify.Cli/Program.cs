@@ -48,7 +48,7 @@ TypeRegistrar ConfigureServices(out IConfiguration configuration)
 
     services.AddSingleton<IConfiguration>(configuration);
     services.AddSingleton<ProjectLocator>();
-    services.AddSingleton<MsBuildService>();
+    services.AddScoped<MsBuildService>();
     services.AddSingleton<FormatterFactory>();
 
     services.AddLogging(builder => builder.AddSimpleConsole().SetMinimumLevel(logLevel));
