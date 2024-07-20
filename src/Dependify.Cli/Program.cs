@@ -1,3 +1,4 @@
+using Dependify.Cli.Formatters;
 using Dependify.Core;
 using Microsoft.Extensions.Logging;
 

@@ -2,6 +2,7 @@ namespace Dependify.Cli.Commands;
 
 using Dependify.Cli;
 using Dependify.Cli.Commands.Settings;
+using Dependify.Cli.Formatters;
 using Dependify.Core;
 using Dependify.Core.Graph;
 using Depends.Core.Graph;
@@ -39,22 +40,22 @@ internal class ScanCommand(
         return 0;
     }
 
-    private void DisplayProjects(ScanCommandSettings settings, IEnumerable<Node> nodes, string prefix) =>
-        AnsiConsole
+    private void DisplayProjects(ScanCommandSettings settings, IEnumerable<Node> nodes, string prefix)
+    {
+        DependencyGraph? graph = AnsiConsole
             .Status()
             .Start(
                 $"Analyzing {prefix}...",
                 ctx =>
-                {
-                    var graph = msBuildService.AnalyzeReferences(
+                    graph = msBuildService.AnalyzeReferences(
                         nodes.OfType<ProjectReferenceNode>(),
                         settings.IncludePackages!.Value,
                         settings.Framework
-                    );
-
-                    this.PrintResult(graph, settings, prefix, prefix);
-                }
+                    )
             );
+
+        this.PrintResult(graph, settings, prefix, prefix);
+    }
 
     private void DisplaySolutions(
         ScanCommandSettings settings,
@@ -75,23 +76,18 @@ internal class ScanCommand(
 
         foreach (var solution in solutionNodes.Where(n => selectedSolutions.Contains(n.Id)))
         {
-            AnsiConsole
+            DependencyGraph graph = AnsiConsole
                 .Status()
                 .Start(
                     $"Analyzing {solution.Id}...",
                     ctx =>
-                    {
-                        var graph = msBuildService.AnalyzeReferences(
+                        graph = msBuildService.AnalyzeReferences(
                             solution,
                             settings.IncludePackages!.Value,
                             settings.Framework
-                        );
-
-                        ctx.SpinnerStyle(Style.Parse("green"));
-
-                        this.PrintResult(graph, settings, solution.Path, prefix);
-                    }
+                        )
                 );
+            this.PrintResult(graph, settings, solution.Path, prefix);
         }
     }
 
@@ -130,6 +126,7 @@ internal class ScanCommand(
             table.AddColumn("Name");
             table.AddColumn("Type");
             table.AddColumn("Dependencies (d/a) count");
+            // TODO: consider using text TextPath(
             table.AddColumn($"Path {prefix}");
 
             foreach (var node in nodes)
@@ -145,7 +142,7 @@ internal class ScanCommand(
         }
         else
         {
-            var formatter = formatterFactory.Create(settings);
+            using var formatter = formatterFactory.Create(settings);
 
             formatter.Write(graph);
         }

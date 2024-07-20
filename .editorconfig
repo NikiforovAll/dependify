@@ -474,3 +474,6 @@ dotnet_diagnostic.CS1591.severity = suggestion
 
 # IDE0022: Use expression body for method
 dotnet_diagnostic.IDE0022.severity = silent
+
+# CA1822: Mark members as static
+dotnet_diagnostic.CA1822.severity = suggestion

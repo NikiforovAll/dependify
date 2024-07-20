@@ -1,64 +1,21 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Text.Json.Serialization.Metadata;
+namespace Dependify.Cli.Formatters;
+
 using Dependify.Cli.Commands.Settings;
-using Dependify.Core.Graph;
-using Depends.Core.Graph;
 
 internal class FormatterFactory
 {
-    public IOutputFormatter Create(GlobalCommandSettings settings) =>
-        settings switch
+    public IOutputFormatter Create(GlobalCommandSettings settings)
+    {
+        var writer = SelectOutputWriter(settings);
+
+        return settings.Format switch
         {
-            { Format: OutputFormat.Json }
-                => new JsonOutputFormatter(
-                    string.IsNullOrWhiteSpace(settings.OutputPath) ? Console.Out : new StreamWriter(settings.OutputPath)
-                ),
+            OutputFormat.Json => new JsonOutputFormatter(writer),
+            OutputFormat.Dot => new DotOutputFormatter(writer),
             _ => throw new NotImplementedException(),
         };
-}
-
-internal class JsonOutputFormatter(TextWriter textWriter) : IOutputFormatter
-{
-    private static readonly JsonSerializerOptions JsonOptions =
-        new()
-        {
-            WriteIndented = true,
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            TypeInfoResolver = new PolymorphicTypeResolver()
-        };
-
-    public void Write<T>(T data)
-    {
-        textWriter.WriteLine(JsonSerializer.Serialize(data, JsonOptions));
-
-        textWriter.Flush();
     }
 
-    internal class PolymorphicTypeResolver : DefaultJsonTypeInfoResolver
-    {
-        public override JsonTypeInfo GetTypeInfo(Type type, JsonSerializerOptions options)
-        {
-            var jsonTypeInfo = base.GetTypeInfo(type, options);
-
-            var baseType = typeof(Node);
-            if (jsonTypeInfo.Type == baseType)
-            {
-                jsonTypeInfo.PolymorphismOptions = new JsonPolymorphismOptions
-                {
-                    TypeDiscriminatorPropertyName = "$type",
-                    IgnoreUnrecognizedTypeDiscriminators = true,
-                    UnknownDerivedTypeHandling = JsonUnknownDerivedTypeHandling.FailSerialization,
-                    DerivedTypes =
-                    {
-                        new JsonDerivedType(typeof(SolutionReferenceNode), nameof(SolutionReferenceNode)),
-                        new JsonDerivedType(typeof(ProjectReferenceNode), nameof(ProjectReferenceNode)),
-                        new JsonDerivedType(typeof(PackageReferenceNode), nameof(PackageReferenceNode)),
-                    }
-                };
-            }
-
-            return jsonTypeInfo;
-        }
-    }
+    private static TextWriter SelectOutputWriter(GlobalCommandSettings settings) =>
+        string.IsNullOrWhiteSpace(settings.OutputPath) ? Console.Out : new StreamWriter(settings.OutputPath);
 }
