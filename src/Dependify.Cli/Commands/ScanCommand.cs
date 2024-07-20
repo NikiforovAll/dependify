@@ -42,17 +42,15 @@ internal class ScanCommand(
 
     private void DisplayProjects(ScanCommandSettings settings, IEnumerable<Node> nodes, string prefix)
     {
-        DependencyGraph? graph = AnsiConsole
-            .Status()
-            .Start(
-                $"Analyzing {prefix}...",
-                ctx =>
-                    graph = msBuildService.AnalyzeReferences(
-                        nodes.OfType<ProjectReferenceNode>(),
-                        settings.IncludePackages!.Value,
-                        settings.Framework
-                    )
-            );
+        var graph = DoSomeWork(
+            () =>
+                msBuildService.AnalyzeReferences(
+                    nodes.OfType<ProjectReferenceNode>(),
+                    new(settings.IncludePackages!.Value, settings.FullScan!.Value, settings.Framework)
+                ),
+            $"Analyzing {prefix}...",
+            settings
+        );
 
         this.PrintResult(graph, settings, prefix, prefix);
     }
@@ -68,7 +66,7 @@ internal class ScanCommand(
             settings.Interactive!.Value && solutionCount > 1
                 ? AnsiConsole.Prompt(
                     new MultiSelectionPrompt<string>()
-                        .Title("Please select the solutions to [green]analyze[/]?")
+                        .Title("Please select the solutions to [green]analyze[/].")
                         .PageSize(10)
                         .AddChoices(solutionNodes.Select(n => n.Id).ToList())
                 )
@@ -76,19 +74,27 @@ internal class ScanCommand(
 
         foreach (var solution in solutionNodes.Where(n => selectedSolutions.Contains(n.Id)))
         {
-            DependencyGraph graph = AnsiConsole
-                .Status()
-                .Start(
-                    $"Analyzing {solution.Id}...",
-                    ctx =>
-                        graph = msBuildService.AnalyzeReferences(
-                            solution,
-                            settings.IncludePackages!.Value,
-                            settings.Framework
-                        )
-                );
+            var graph = DoSomeWork(
+                () =>
+                    msBuildService.AnalyzeReferences(
+                        solution,
+                        new(settings.IncludePackages!.Value, settings.FullScan!.Value, settings.Framework)
+                    ),
+                $"Analyzing {solution.Id}...",
+                settings
+            );
             this.PrintResult(graph, settings, solution.Path, prefix);
         }
+    }
+
+    private static T DoSomeWork<T>(Func<T> func, string message, ScanCommandSettings settings)
+    {
+        if (settings.LogLevel is LogLevel.None)
+        {
+            return AnsiConsole.Status().Start(message, _ => func());
+        }
+
+        return func();
     }
 
     private static string GetFullPath(ScanCommandSettings settings)
@@ -115,6 +121,11 @@ internal class ScanCommand(
 
     private void PrintResult(DependencyGraph graph, ScanCommandSettings settings, string title, string prefix)
     {
+        if (settings.ExcludeSln!.Value)
+        {
+            graph = graph.CopyNoRoot();
+        }
+
         if (settings.Format is OutputFormat.Tui)
         {
             var table = new Table() { Caption = new TableTitle(title) };
@@ -166,4 +177,11 @@ internal class ScanCommand(
     }
 }
 
-internal class ScanCommandSettings : BaseAnalyzeCommandSettings { }
+internal class ScanCommandSettings : BaseAnalyzeCommandSettings
+{
+    [CommandOption("--full-scan")]
+    public bool? FullScan { get; set; } = false;
+
+    [CommandOption("--exclude-sln")]
+    public bool? ExcludeSln { get; set; } = false;
+}

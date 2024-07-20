@@ -35,5 +35,6 @@ internal enum OutputFormat
 {
     Tui,
     Json,
-    Dot
+    Dot,
+    Mermaid
 }

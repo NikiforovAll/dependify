@@ -13,8 +13,7 @@
         "C:/Users/Oleksii_Nikiforov/dev/presales-cloud/tests/smoke",
         "-f",
         "net8",
-        "-o",
-        "./example.json"
+        "--full-scan"
       ],
       "cwd": "${workspaceFolder}",
       "stopAtEntry": false,

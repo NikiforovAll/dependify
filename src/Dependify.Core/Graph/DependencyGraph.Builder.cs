@@ -8,6 +8,7 @@ public sealed partial class DependencyGraph
     {
         private readonly HashSet<Node> nodes = [];
         private readonly HashSet<Edge> edges = [];
+        private readonly HashSet<Node> scannedForDependencies = [];
 
         public Node Root { get; }
 
@@ -43,11 +44,24 @@ public sealed partial class DependencyGraph
             return this;
         }
 
-        public Builder WithNode(Node node)
+        public Builder WithNode(Node node, bool scanned = false)
         {
             this.nodes.Add(node);
+
+            if (scanned)
+            {
+                this.MarkAsScanned(node);
+            }
+
             return this;
         }
+
+        private void MarkAsScanned(Node node)
+        {
+            this.scannedForDependencies.Add(node);
+        }
+
+        public IEnumerable<Node> GetNotScannedNodes() => this.nodes.Except(this.scannedForDependencies);
 
         public DependencyGraph Build()
         {

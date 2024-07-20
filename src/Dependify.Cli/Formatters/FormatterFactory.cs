@@ -12,6 +12,7 @@ internal class FormatterFactory
         {
             OutputFormat.Json => new JsonOutputFormatter(writer),
             OutputFormat.Dot => new DotOutputFormatter(writer),
+            OutputFormat.Mermaid => new MermaidOutputFormatter(writer),
             _ => throw new NotImplementedException(),
         };
     }

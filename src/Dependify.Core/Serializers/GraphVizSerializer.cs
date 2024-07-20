@@ -6,7 +6,7 @@ using Depends.Core.Graph;
 
 public static class GraphvizSerializer
 {
-    private const string ProjectBackgroundColor = "#00cc22";
+    private const string ProjectBackgroundColor = "#74200154";
     private const string PackageBackgroundColor = "#22aaee";
 
     public static string ToString(DependencyGraph graph)

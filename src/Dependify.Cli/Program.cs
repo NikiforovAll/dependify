@@ -10,11 +10,9 @@ app.Configure(config =>
         "graph",
         c =>
         {
-            c.AddCommand<GenerateDependenciesCommand>("show")
-                .WithDescription("Generates a plan for the dependencies of a project or solution.")
-                .WithExample("graph", "show", "./path/to/project");
-
-            c.AddCommand<ScanCommand>("scan");
+            c.AddCommand<ScanCommand>("scan")
+                .WithDescription("Scans for projects and solutions and retrives their dependencies")
+                .WithExample("graph", "scan", "./path/to/folder", "--framework", "net8");
         }
     );
 
@@ -38,7 +36,7 @@ TypeRegistrar ConfigureServices(out IConfiguration configuration)
     using var configurationManager = new ConfigurationManager();
 
     var logLevelArg = args.Contains("--log-level")
-        ? args.SkipWhile(a => a is not "--log-level").FirstOrDefault()
+        ? args.SkipWhile(a => a is not "--log-level").Skip(1).FirstOrDefault()
         : LogLevel.None.ToString();
 
     if (!Enum.TryParse<LogLevel>(logLevelArg, out var logLevel))

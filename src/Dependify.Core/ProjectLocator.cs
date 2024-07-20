@@ -6,8 +6,8 @@ using Microsoft.Extensions.Logging;
 
 public class ProjectLocator(ILogger<ProjectLocator> logger)
 {
-    private const string SolutionFileExtension = "*.sln";
-    private const string ProjectFileExtension = "*.csproj";
+    private const string SolutionFileExtension = ".sln";
+    private const string ProjectFileExtension = ".csproj";
 
     /// <summary>
     /// Scans the specified path for .csproj and solution files.
@@ -31,32 +31,43 @@ public class ProjectLocator(ILogger<ProjectLocator> logger)
 
     private IEnumerable<Node> Scan(string? path, SearchOption searchOption)
     {
-        if (File.Exists(path))
-        {
-            if (Path.GetExtension(path) == ProjectFileExtension)
-            {
-                return [new ProjectReferenceNode(path)];
-            }
+        IEnumerable<Node> result = [];
 
-            if (Path.GetExtension(path) == SolutionFileExtension)
+        if (File.Exists(path) && Path.GetExtension(path) is var extension)
+        {
+            if (extension == ProjectFileExtension)
             {
-                return [new SolutionReferenceNode(path)];
+                result = result.Append(new ProjectReferenceNode(path));
+            }
+            else if (extension == SolutionFileExtension)
+            {
+                result = result.Append(new SolutionReferenceNode(path));
             }
         }
-
-        if (Directory.Exists(path))
+        else if (Directory.Exists(path))
         {
             var projects = Directory
-                .GetFiles(path, ProjectFileExtension, searchOption)
+                .GetFiles(path, $"*{ProjectFileExtension}", searchOption)
                 .Select<string, Node>(p => new ProjectReferenceNode(p));
 
             var solutions = Directory
-                .GetFiles(path, SolutionFileExtension, searchOption)
+                .GetFiles(path, $"*{SolutionFileExtension}", searchOption)
                 .Select<string, Node>(s => new SolutionReferenceNode(s));
 
-            return projects.Concat(solutions);
+            result = projects.Concat(solutions);
+        }
+        else
+        {
+            throw new ArgumentException("The specified path does not exist.", nameof(path));
         }
 
-        throw new ArgumentException("The specified path does not exist.", nameof(path));
+        logger.LogInformation("Located number of items - {Count}", result.Count());
+
+        foreach (var item in result)
+        {
+            logger.LogDebug("Located item - {Item}", item);
+        }
+
+        return result;
     }
 }
