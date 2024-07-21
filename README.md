@@ -13,19 +13,39 @@
 dotnet tool install -g Dependify.Cli
 ```
 
+```bash
+dotnet dependify graph --help
+```
+    
+```text
+USAGE:
+    dependify graph [OPTIONS] <COMMAND>
+
+EXAMPLES:
+    dependify graph scan ./path/to/folder --framework net8
+    dependify graph show ./path/to/project --framework net8
+
+OPTIONS:
+    -h, --help    Prints help information
+
+COMMANDS:
+    scan <path>    Scans for projects and solutions and retrives their dependencies
+    show <path>    Shows the dependencies of a project or solution located in the specified path
+```
+
 ## Example
 
 ```bash
-dotnet run --project ./src/Dependify.Cli/ -- \
-    graph scan $dev/ keycloak-authorization-services-dotnet/ \
+dotnet dependify graph scan \
+    $dev/keycloak-authorization-services-dotnet/ \
     --framework net8
 ```
 
 ![tui-demo1](./assets/tui-demo1.png)
 
 ```bash
-dotnet run --project ./src/Dependify.Cli/ \
-    graph scan $dev/ keycloak-authorization-services-dotnet/ \
+dotnet dependify graph scan \
+    $dev/keycloak-authorization-services-dotnet/ \
     --exclude-sln \
     --framework net8 \
     --format mermaid \

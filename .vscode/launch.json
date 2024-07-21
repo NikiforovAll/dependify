@@ -7,19 +7,11 @@
       "request": "launch",
       "preLaunchTask": "build",
       "program": "${workspaceFolder}/src/Dependify.Cli/bin/Debug/net8.0/Dependify.Cli.dll",
-      "args": [
-        "graph",
-        "scan",
-        "C:/Users/Oleksii_Nikiforov/dev/presales-cloud/tests/smoke",
-        "-f",
-        "net8",
-        "--full-scan"
-      ],
+      "args": [],
       "cwd": "${workspaceFolder}",
       "stopAtEntry": false,
       "console": "externalTerminal",
-      "env": {
-      }
+      "env": {}
     }
   ]
 }

@@ -16,7 +16,7 @@ public class ProjectLocator(ILogger<ProjectLocator> logger)
     /// <returns></returns>
     public IEnumerable<Node> FullScan(string? path)
     {
-        return this.Scan(path, SearchOption.AllDirectories);
+        return this.Scan(path, new EnumerationOptions { RecurseSubdirectories = true, });
     }
 
     /// <summary>
@@ -26,10 +26,10 @@ public class ProjectLocator(ILogger<ProjectLocator> logger)
     /// <returns></returns>
     public IEnumerable<Node> FolderScan(string? path)
     {
-        return this.Scan(path, SearchOption.TopDirectoryOnly);
+        return this.Scan(path, new EnumerationOptions { RecurseSubdirectories = true, MaxRecursionDepth = 1 });
     }
 
-    private IEnumerable<Node> Scan(string? path, SearchOption searchOption)
+    private IEnumerable<Node> Scan(string? path, EnumerationOptions enumerationOptions)
     {
         IEnumerable<Node> result = [];
 
@@ -47,11 +47,11 @@ public class ProjectLocator(ILogger<ProjectLocator> logger)
         else if (Directory.Exists(path))
         {
             var projects = Directory
-                .GetFiles(path, $"*{ProjectFileExtension}", searchOption)
+                .GetFiles(path, $"*{ProjectFileExtension}", enumerationOptions)
                 .Select<string, Node>(p => new ProjectReferenceNode(p));
 
             var solutions = Directory
-                .GetFiles(path, $"*{SolutionFileExtension}", searchOption)
+                .GetFiles(path, $"*{SolutionFileExtension}", enumerationOptions)
                 .Select<string, Node>(s => new SolutionReferenceNode(s));
 
             result = projects.Concat(solutions);

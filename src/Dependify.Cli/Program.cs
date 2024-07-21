@@ -13,6 +13,10 @@ app.Configure(config =>
             c.AddCommand<ScanCommand>("scan")
                 .WithDescription("Scans for projects and solutions and retrives their dependencies")
                 .WithExample("graph", "scan", "./path/to/folder", "--framework", "net8");
+
+            c.AddCommand<ShowCommand>("show")
+                .WithDescription("Shows the dependencies of a project or solution located in the specified path")
+                .WithExample("graph", "show", "./path/to/project", "--framework", "net8");
         }
     );
 

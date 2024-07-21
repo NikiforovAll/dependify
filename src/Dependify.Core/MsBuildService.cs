@@ -54,6 +54,15 @@ public class MsBuildService(ILogger<MsBuildService> logger, ILoggerFactory logge
         return builder.Build();
     }
 
+    public DependencyGraph AnalyzeReferences(ProjectReferenceNode node, MsBuildConfig config)
+    {
+        var builder = new DependencyGraph.Builder(node);
+
+        this.AnalyzeReferencesCore(builder, [node], config);
+
+        return builder.Build();
+    }
+
     public DependencyGraph AnalyzeReferences(IEnumerable<ProjectReferenceNode> nodes, MsBuildConfig config)
     {
         var builder = new DependencyGraph.Builder(new SolutionReferenceNode());
@@ -69,6 +78,11 @@ public class MsBuildService(ILogger<MsBuildService> logger, ILoggerFactory logge
         MsBuildConfig config
     )
     {
+        if (!nodes.Any())
+        {
+            return;
+        }
+
         var analyzerManager = new AnalyzerManager(new AnalyzerManagerOptions { LoggerFactory = loggerFactory, });
 
         foreach (var path in nodes.Select(n => n.Path))
@@ -77,6 +91,17 @@ public class MsBuildService(ILogger<MsBuildService> logger, ILoggerFactory logge
             var project = analyzerManager.GetProject(path);
 
             this.AddDependenciesToGraph(builder, project, projectNode, config);
+        }
+
+        if (config.FullScan)
+        {
+            List<ProjectReferenceNode> nodesToScan;
+            do
+            {
+                nodesToScan = builder.GetNotScannedNodes().OfType<ProjectReferenceNode>().ToList();
+
+                this.AnalyzeReferencesCore(builder, nodesToScan, config);
+            } while (nodesToScan.Count > 0);
         }
     }
 
@@ -128,8 +153,11 @@ public class MsBuildService(ILogger<MsBuildService> logger, ILoggerFactory logge
     }
 }
 
-public class MsBuildServiceListener(Action<ProjectReferenceNode >? projectLoading, Action<IAnalyzerResult>? projectLoaded)
+public class MsBuildServiceListener(
+    Action<ProjectReferenceNode>? projectLoading,
+    Action<IAnalyzerResult>? projectLoaded
+)
 {
-    public Action<ProjectReferenceNode >? OnProjectLoading { get; init; } = projectLoading;
+    public Action<ProjectReferenceNode>? OnProjectLoading { get; init; } = projectLoading;
     public Action<IAnalyzerResult>? OnProjectLoaded { get; init; } = projectLoaded;
 }
