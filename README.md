@@ -14,7 +14,7 @@ dotnet tool install -g Dependify.Cli
 ```
 
 ```bash
-dotnet dependify graph --help
+dependify graph --help
 ```
     
 ```text
@@ -36,7 +36,7 @@ COMMANDS:
 ## Example
 
 ```bash
-dotnet dependify graph scan \
+dependify graph scan \
     $dev/keycloak-authorization-services-dotnet/ \
     --framework net8
 ```
@@ -44,7 +44,7 @@ dotnet dependify graph scan \
 ![tui-demo1](./assets/tui-demo1.png)
 
 ```bash
-dotnet dependify graph scan \
+dependify graph scan \
     $dev/keycloak-authorization-services-dotnet/ \
     --exclude-sln \
     --framework net8 \

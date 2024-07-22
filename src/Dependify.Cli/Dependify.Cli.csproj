@@ -5,6 +5,7 @@
     <AssemblyName>Dependify.Cli</AssemblyName>
     <PackAsTool>true</PackAsTool>
     <ToolName>dependify</ToolName>
+    <ToolCommandName>dependify</ToolCommandName>
   </PropertyGroup>
 
   <PropertyGroup Label="Package">
