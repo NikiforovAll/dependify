@@ -2,6 +2,12 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "C#: Web Debug",
+      "type": "dotnet",
+      "request": "launch",
+      "projectPath": "${workspaceFolder}/src/Web/Web.csproj",
+    },
+    {
       "name": "debug",
       "type": "coreclr",
       "request": "launch",
