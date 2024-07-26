@@ -2,12 +2,6 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "C#: Web Debug",
-      "type": "dotnet",
-      "request": "launch",
-      "projectPath": "${workspaceFolder}/src/Web/Web.csproj",
-    },
-    {
       "name": "debug",
       "type": "coreclr",
       "request": "launch",
@@ -18,6 +12,29 @@
       "stopAtEntry": false,
       "console": "externalTerminal",
       "env": {}
+    },
+    {
+      "name": "serve:debug",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/src/Dependify.Cli/bin/Debug/net8.0/Dependify.Cli.dll",
+      "args": ["serve", "C:\\Users\\Oleksii_Nikiforov\\dev\\dependify\\cap-aspire"],
+      "cwd": "${workspaceFolder}",
+      "stopAtEntry": false,
+      "console": "externalTerminal",
+      "env": {}
+    },
+    {
+      "name": ".NET Core Attach",
+      "type": "coreclr",
+      "request": "attach"
+    },
+    {
+      "name": "C#: Web Debug",
+      "type": "dotnet",
+      "request": "launch",
+      "projectPath": "${workspaceFolder}/src/Web/Web.csproj"
     }
   ]
 }

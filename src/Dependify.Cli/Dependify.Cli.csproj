@@ -6,6 +6,7 @@
     <PackAsTool>true</PackAsTool>
     <ToolName>dependify</ToolName>
     <ToolCommandName>dependify</ToolCommandName>
+    <IsPackable>true</IsPackable>
   </PropertyGroup>
 
   <PropertyGroup Label="Package">

@@ -134,3 +134,7 @@ graph LR
 `dotnet cake --target test`
 
 `dotnet cake --target pack`
+
+`dotnet tool install --global --add-source ./Artefacts Dependify.Cli --prerelease`
+
+`dotnet tool uninstall Dependify.Cli -g`

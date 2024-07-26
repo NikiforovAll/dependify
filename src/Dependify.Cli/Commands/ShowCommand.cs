@@ -1,7 +1,6 @@
 namespace Dependify.Cli.Commands;
 
 using System.ComponentModel;
-using Dependify.Cli;
 using Dependify.Cli.Commands.Settings;
 using Dependify.Cli.Formatters;
 using Dependify.Core;
@@ -37,7 +36,7 @@ internal class ShowCommand(
 
         var selected = SelectNode(settings, nodes, nodesCount);
 
-        if (Utils.ShouldOutputTui(settings))
+        if (Cli.Utils.ShouldOutputTui(settings))
         {
             AnsiConsole.MarkupLine($"[green] Found: [/] [grey]{selected.Path}[/]");
         }
@@ -204,10 +203,10 @@ internal class ShowCommand(
     {
         if (selected is SolutionReferenceNode solution)
         {
-            return Utils.DoSomeWork(
+            return Cli.Utils.DoSomeWork(
                 ctx =>
                 {
-                    Utils.SetDiagnosticSource(msBuildService, ctx);
+                    Cli.Utils.SetDiagnosticSource(msBuildService, ctx);
 
                     return msBuildService.AnalyzeReferences(
                         solution,
@@ -220,10 +219,10 @@ internal class ShowCommand(
         }
         else if (selected is ProjectReferenceNode project)
         {
-            return Utils.DoSomeWork(
+            return Cli.Utils.DoSomeWork(
                 ctx =>
                 {
-                    Utils.SetDiagnosticSource(msBuildService, ctx);
+                    Cli.Utils.SetDiagnosticSource(msBuildService, ctx);
 
                     return msBuildService.AnalyzeReferences(
                         project,

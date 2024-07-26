@@ -9,7 +9,8 @@ public static class Program
 
     public static async Task Run(
         WebApplicationOptions? appOptions = default,
-        Action<WebApplicationBuilder>? webBuilder = default
+        Action<WebApplicationBuilder>? webBuilder = default,
+        Action<WebApplication>? webApp = default
     )
     {
         appOptions ??= new();
@@ -39,6 +40,8 @@ public static class Program
         app.UseAntiforgery();
 
         app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
+
+        webApp?.Invoke(app);
 
         await app.RunAsync();
     }

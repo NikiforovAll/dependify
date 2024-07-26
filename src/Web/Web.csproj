@@ -3,4 +3,8 @@
   <ItemGroup>
     <PackageReference Include="MudBlazor" />
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Dependify.Core\Dependify.Core.csproj" />
+  </ItemGroup>
 </Project>

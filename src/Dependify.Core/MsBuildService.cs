@@ -6,13 +6,34 @@ using Depends.Core.Graph;
 using Microsoft.Build.Construction;
 using Microsoft.Extensions.Logging;
 
-public record MsBuildConfig(bool IncludePackages = false, bool FullScan = false, string? Framework = default);
+public record MsBuildConfig
+{
+    public MsBuildConfig() { }
+
+    public MsBuildConfig(bool includePackages, bool fullScan, string? framework)
+    {
+        this.IncludePackages = includePackages;
+        this.FullScan = fullScan;
+        this.Framework = framework;
+    }
+
+    public bool IncludePackages { get; set; }
+    public bool FullScan { get; set; }
+    public string? Framework { get; set; }
+
+    public void Deconstruct(out bool includePackages, out bool fullScan, out string? framework)
+    {
+        includePackages = this.IncludePackages;
+        fullScan = this.FullScan;
+        framework = this.Framework;
+    }
+}
 
 public class MsBuildService(ILogger<MsBuildService> logger, ILoggerFactory loggerFactory)
 {
     private MsBuildServiceListener? listener;
 
-    public void SetDiagnosticSource(MsBuildServiceListener listener)
+    public void SetDiagnosticSource(MsBuildServiceListener? listener)
     {
         this.listener = listener;
     }

@@ -7,10 +7,12 @@
 <MudLayout>
     <MudAppBar Elevation="1">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
-        <MudText Typo="Typo.h5" Class="ml-3">Application</MudText>
+        <MudText Typo="Typo.h5" Class="ml-3">Dependify</MudText>
         <MudSpacer />
         <MudIconButton Icon="@(DarkLightModeButtonIcon)" Color="Color.Inherit" OnClick="@DarkModeToggle" />
         <MudIconButton Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" Edge="Edge.End" />
+        <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Inherit"
+            Href="https://github.com/NikiforovAll/dependify" Target="_blank" />
     </MudAppBar>
     <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2">
         <NavMenu />
@@ -28,8 +30,8 @@
 </div>
 
 @code {
-    private bool _drawerOpen = true;
-    private bool _isDarkMode = true;
+    private bool _drawerOpen = false;
+    private bool _isDarkMode = false;
     private MudTheme? _theme = null;
 
     protected override void OnInitialized()
