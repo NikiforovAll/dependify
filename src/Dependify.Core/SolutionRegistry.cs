@@ -50,16 +50,15 @@ public class SolutionRegistry(FileProviderProjectLocator projectLocator, MsBuild
         var graph = this.GetGraph(solution);
 
         return graph is null
-            ? new(node, 0, 0, 0)
+            ? new(node, [], [], [])
             : new(
                 node,
-                graph.FindDescendants(node).OfType<ProjectReferenceNode>().Count(),
-                graph.FindDescendants(node).OfType<PackageReferenceNode>().Count(),
-                graph.FindAscendants(node).OfType<ProjectReferenceNode>().Count()
+                graph.FindDescendants(node).OfType<ProjectReferenceNode>().ToList(),
+                graph.FindDescendants(node).OfType<PackageReferenceNode>().ToList(),
+                graph.FindAscendants(node).OfType<ProjectReferenceNode>().ToList()
             );
     }
 
-    public record NodeUsageStatistics(Node Node, int DependsOnProjects, int DependsOnPackages, int UsedBy);
     public IList<SolutionReferenceNode> Solutions { get; private set; } = [];
     public IList<Node> Nodes { get; private set; }
     public bool IsLoaded { get; private set; }
@@ -84,3 +83,15 @@ public class SolutionRegistry(FileProviderProjectLocator projectLocator, MsBuild
 }
 
 public record SolutionRegistryListener(Action<SolutionReferenceNode, bool>? SolutionLoaded);
+
+public record NodeUsageStatistics(
+    Node Node,
+    IList<ProjectReferenceNode> DependsOnProjects,
+    IList<PackageReferenceNode> DependsOnPackages,
+    IList<ProjectReferenceNode> UsedBy
+)
+{
+    public int DependsOnProjectsCount => this.DependsOnProjects.Count;
+    public int DependsOnPackagesCount => this.DependsOnPackages.Count;
+    public int UsedByCount => this.UsedBy.Count;
+}

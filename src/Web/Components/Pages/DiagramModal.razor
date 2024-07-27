@@ -1,0 +1,27 @@
+@inject IJSRuntime JSRuntime
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public string DiagramContent { get; set; } = default!;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JSRuntime.InvokeVoidAsync("mermaid.init");
+        }
+    }
+
+    private void Close() => MudDialog.Close();
+}
+
+<MudDialog>
+    <DialogContent>
+        <div class="mermaid" style="text-align: center;">
+            @DiagramContent
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Color="Color.Primary" OnClick="Close">Close</MudButton>
+    </DialogActions>
+</MudDialog>

@@ -150,6 +150,7 @@ public class MsBuildService(ILogger<MsBuildService> logger, ILoggerFactory logge
         _ = analyzerResult ?? throw new InvalidOperationException("Unable to load project.");
 
         this.listener?.OnProjectLoaded?.Invoke(analyzerResult);
+
         builder.WithNode(projectNode, true);
 
         foreach (var reference in analyzerResult.ProjectReferences)

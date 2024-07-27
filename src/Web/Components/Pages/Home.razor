@@ -1,6 +1,7 @@
 ﻿@page "/"
 @using Dependify.Core
 @using Dependify.Core.Graph
+@using Dependify.Core.Serializers
 @using Depends.Core.Graph
 @using Microsoft.Extensions.Options
 @using static Dependify.Core.SolutionRegistry
@@ -8,6 +9,7 @@
 @inject SolutionRegistry SolutionRegistry
 @inject ISnackbar Snackbar
 @inject IOptions<MsBuildConfig> MsBuildConfig
+@inject IDialogService DialogService
 
 <PageTitle>Dependify</PageTitle>
 
@@ -25,7 +27,7 @@
 </MudToolBar>
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge">
-    <MudPaper Class="pa-8 ma-8" Elevation="3">
+    <MudPaper Class="pa-4 ma-16" Elevation="3">
         @if (displayMode == DisplayMode.All)
         {
             <MudSimpleTable Style="overflow-x: auto;" Dense="true" Hover="true" Bordered="true" Striped="true">
@@ -58,27 +60,74 @@
             <MudSimpleTable Style="overflow-x: auto;" Dense="true" Hover="true" Bordered="true" Striped="true">
                 <thead>
                     <tr>
-                        <th><MudText>Name</MudText></th>
-                        <th><MudText>Depends On Projects</MudText></th>
-                        <th><MudText>Used By Projects</MudText></th>
-                        <th><MudText>Depends On Packages</MudText></th>
+                        <th><MudText Style="@($"font-weight:bold")">Name</MudText></th>
+                        <th><MudText Style="@($"text-align: center; font-weight:bold")">Depends On Projects</MudText></th>
+                        <th><MudText Style="@($"text-align: center; font-weight:bold")">Used By Projects</MudText></th>
+                        <th><MudText Style="@($"text-align: center; font-weight:bold")">Depends On Packages</MudText></th>
+                        <th><MudText Style="@($"text-align: center; font-weight:bold")">Actions</MudText></th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach (var project in projects)
                     {
                         <tr>
-                            @if (project.Node.Type == "Solution")
-                            {
-                                <td><MudText Color="Color.Secondary">@project.Node.Id</MudText></td>
-                            }
-                            else
-                            {
-                                <td><MudText Style="@($"color:{Colors.Teal.Lighten1}")">@project.Node.Id</MudText></td>
-                            }
-                            <td><MudText Style="@($"color:{Colors.Teal.Lighten1}")">@project.DependsOnProjects</MudText></td>
-                            <td><MudText Style="@($"color:{Colors.Teal.Lighten3}")">@project.UsedBy</MudText></td>
-                            <td><MudText Style="@($"color:{Colors.Lime.Darken3}")">@project.DependsOnPackages</MudText></td>
+
+                            <td>
+                                <MudTooltip>
+                                    <ChildContent>
+                                        <MudText >@project.Node.Id</MudText>
+                                    </ChildContent>
+                                    <TooltipContent>
+                                        <MudText>@project.Node.DirectoryPath</MudText>
+                                    </TooltipContent>
+                                </MudTooltip>
+                            </td>
+                            <td style="text-align: center;">
+                                <MudTooltip>
+                                    <ChildContent>
+                                        <MudText Style="@($"color:{Colors.Teal.Lighten3}")">@project.DependsOnProjectsCount</MudText>
+                                    </ChildContent>
+                                    <TooltipContent>
+                                        @foreach (var childProject in project.DependsOnProjects)
+                                        {
+                                            <MudText Style="@($"color:{Colors.Teal.Lighten3}")">@childProject.Id</MudText>
+                                        }
+                                    </TooltipContent>
+                                </MudTooltip>
+                            </td>
+                            <td style="text-align: center;">
+                                <MudTooltip>
+                                    <ChildContent>
+                                        <MudText Style="@($"color:{Colors.Teal.Lighten3}")">@project.UsedByCount</MudText>
+                                    </ChildContent>
+                                    <TooltipContent>
+                                        @foreach (var childProject in project.UsedBy)
+                                        {
+                                            <MudText Style="@($"color:{Colors.Teal.Lighten3}")">@childProject.Id</MudText>
+                                        }
+                                    </TooltipContent>
+                                </MudTooltip>
+                            </td>
+                            <td style="text-align: center;">
+
+                                <MudTooltip>
+                                    <ChildContent>
+                                        <MudText Style="@($"color:{Colors.Lime.Darken3}")">@project.DependsOnPackagesCount</MudText>
+                                    </ChildContent>
+                                    <TooltipContent>
+                                        @foreach (var package in project.DependsOnPackages)
+                                        {
+                                            <MudText Style="@($"color:{Colors.Lime.Darken3}")">@package.Id [@package.Version]</MudText>
+                                        }
+                                    </TooltipContent>
+                                </MudTooltip>
+
+                            </td>
+                            <td style="@($"text-align: center")">
+                                <MudIconButton Icon="@Icons.Material.TwoTone.FileOpen" Size="Size.Medium" Color="Color.Primary" OnClick="() => ShowDiagramModal(project.Node.Id)" />
+                                <MudIconButton Icon="@Icons.Material.Filled.ContentCopy" Size="Size.Medium" Color="Color.Primary" OnClick="() => CopyDiagramToClipboard(project.Node.Id)" />
+
+                            </td>
                         </tr>
                     }
                 </tbody>
@@ -145,6 +194,58 @@
         {
             Snackbar.Add($"Analyzing - {selectedSolution}, please wait...", Severity.Normal);
         }
+    }
+
+    private async Task ShowDiagramModal(string nodeId)
+    {
+        var solution = solutionNodes.FirstOrDefault(n => n.Id == selectedSolution);
+
+        var subGraph = GetSubGraph(nodeId);
+
+        if(subGraph is null)
+        {
+            return;
+        }
+
+        var diagramContent = MermaidSerializer.ToString(subGraph);
+        var parameters = new DialogParameters { ["DiagramContent"] = diagramContent };
+        var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.ExtraLarge, FullWidth = true };
+
+        var dialog = DialogService.Show<DiagramModal>("Mermaid Diagram", parameters, options);
+
+        await dialog.Result;
+    }
+
+    private async Task CopyDiagramToClipboard(string nodeId)
+    {
+        var solution = solutionNodes.FirstOrDefault(n => n.Id == selectedSolution);
+
+        var subGraph = GetSubGraph(nodeId);
+
+        if(subGraph is null)
+        {
+            return;
+        }
+
+        Snackbar.Add($"Copied to clipboard", Severity.Normal);
+    }
+
+    private DependencyGraph? GetSubGraph(string nodeId)
+    {
+        var solution = solutionNodes.FirstOrDefault(n => n.Id == selectedSolution);
+
+        if(SolutionRegistry.GetGraph(solution) is var graph && graph is not null)
+        {
+            var project = graph.Nodes.FirstOrDefault(n => n.Id == nodeId);
+
+            displayMode = DisplayMode.Solutions;
+
+            var subGraph = graph.SubGraph(project, n => n.Type is not "Package");
+
+            return subGraph;
+        }
+
+        return default;
     }
 
     private void SetDiagnosticSource(MsBuildService msBuildService) =>
