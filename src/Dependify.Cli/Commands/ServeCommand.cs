@@ -16,7 +16,7 @@ internal class ServeCommand() : AsyncCommand<ServeCommandSettings>
     {
         var isLoggingEnabled = settings.LogLevel.HasValue && settings.LogLevel.Value != LogLevel.None;
 
-        var directory = Path.GetDirectoryName(settings.Path).NormalizePath();
+        var directory = Path.GetDirectoryName($"{settings.Path.TrimEnd('/')}/").NormalizePath();
 
         if (!Directory.Exists(directory))
         {
