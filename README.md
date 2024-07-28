@@ -33,7 +33,26 @@ COMMANDS:
     show <path>    Shows the dependencies of a project or solution located in the specified path
 ```
 
-## Example
+## Usage
+
+You can start dependify in `serve mode` and open the browser to navigate the generated graph.
+
+```bash
+dependify serve $dev/keycloak-authorization-services-dotnet/
+```
+
+You will see the following output in the terminal. Open <http:localhost:9999/> and browse the graph.
+
+![serve-terminal](./assets/serve-terminal.png)
+
+![serve-main-window](./assets/serve-main-window.png)
+
+You can open the mermaid diagram right in the browser.
+
+![serve-graph-view](./assets/serve-graph-view.png)
+
+
+You can use the CLI for the automation or if you prefer the terminal.
 
 ```bash
 dependify graph scan \
