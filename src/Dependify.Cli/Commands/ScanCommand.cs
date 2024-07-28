@@ -1,6 +1,5 @@
 namespace Dependify.Cli.Commands;
 
-using Dependify.Cli;
 using Dependify.Cli.Commands.Settings;
 using Dependify.Cli.Formatters;
 using Dependify.Core;
@@ -41,10 +40,10 @@ internal class ScanCommand(
     private void DisplayProjects(ScanCommandSettings settings, IEnumerable<Node> nodes)
     {
         var prefix = Utils.CalculateCommonPrefix(nodes);
-        var graph = Utils.DoSomeWork(
+        var graph = Cli.Utils.DoSomeWork(
             ctx =>
             {
-                Utils.SetDiagnosticSource(msBuildService, ctx);
+                Cli.Utils.SetDiagnosticSource(msBuildService, ctx);
 
                 return msBuildService.AnalyzeReferences(
                     nodes.OfType<ProjectReferenceNode>(),
@@ -78,10 +77,10 @@ internal class ScanCommand(
 
         foreach (var solution in solutionNodes.Where(n => selectedSolutions.Contains(n.Id)))
         {
-            var graph = Utils.DoSomeWork(
+            var graph = Cli.Utils.DoSomeWork(
                 ctx =>
                 {
-                    Utils.SetDiagnosticSource(msBuildService, ctx);
+                    Cli.Utils.SetDiagnosticSource(msBuildService, ctx);
 
                     return msBuildService.AnalyzeReferences(
                         solution,

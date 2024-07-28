@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -6,6 +6,7 @@
     <PackAsTool>true</PackAsTool>
     <ToolName>dependify</ToolName>
     <ToolCommandName>dependify</ToolCommandName>
+    <IsPackable>true</IsPackable>
   </PropertyGroup>
 
   <PropertyGroup Label="Package">
@@ -35,6 +36,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Dependify.Core\Dependify.Core.csproj" />
+    <ProjectReference Include="..\Web\Web.csproj" />
   </ItemGroup>
 
 </Project>

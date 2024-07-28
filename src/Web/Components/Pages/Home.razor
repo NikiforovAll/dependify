@@ -1,0 +1,283 @@
+﻿@page "/"
+@using Dependify.Core
+@using Dependify.Core.Graph
+@using Dependify.Core.Serializers
+@using Depends.Core.Graph
+@using Microsoft.Extensions.Options
+@using static Dependify.Core.SolutionRegistry
+
+@inject SolutionRegistry SolutionRegistry
+@inject ISnackbar Snackbar
+@inject IOptions<MsBuildConfig> MsBuildConfig
+@inject IDialogService DialogService
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Dependify</PageTitle>
+
+<MudToolBar>
+    <MudText Typo="Typo.h4">Workbench ⚙️</MudText>
+    <MudSpacer />
+    <MudIconButton Icon="@Icons.Material.Outlined.PlayCircleFilled" Size="Size.Large" Color="Color.Primary" OnClick="@AnalyzeSolution" />
+    <MudSelect T="string" AnchorOrigin="Origin.BottomCenter" AdornmentIcon="@Icons.Material.Filled.RocketLaunch"
+        AdornmentColor="Color.Primary" @bind-Value="selectedSolution" Typo="Typo.h6" Label="Solution">
+        @foreach (var solutionNode in solutionNodes)
+        {
+            <MudSelectItem Value="@solutionNode.Id" />
+        }
+    </MudSelect>
+</MudToolBar>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge">
+    <MudPaper Class="pa-4 ma-16" Elevation="3">
+        @if (displayMode == DisplayMode.All)
+        {
+            <MudSimpleTable Style="overflow-x: auto;" Dense="true" Hover="true" Bordered="true" Striped="true">
+                <thead>
+                    <tr>
+                        <th><MudText Typo="Typo.h6">Name</MudText></th>
+                        <th><MudText Typo="Typo.h6">Path</MudText></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var node in nodes)
+                    {
+                        <tr>
+                            <td>
+                            @if (node.Type == "Solution")
+                            {
+                                <MudText Color="Color.Secondary">@node.Id</MudText>
+                            }
+                            else
+                            {
+                                <MudText Style="@($"color:{Colors.Teal.Lighten1}")">@node.Id</MudText>
+                            }
+                            </td>
+                            <td><MudText>@node.DirectoryPath.RemovePrefix(commonPrefix)</MudText></td>
+                        </tr>
+                    }
+                </tbody>
+            </MudSimpleTable>
+        }
+        else
+        {
+            <MudSimpleTable Style="overflow-x: auto;" Dense="true" Hover="true" Bordered="true" Striped="true">
+                <thead>
+                    <tr>
+                        <th><MudText Style="@($"font-weight:bold")">Name</MudText></th>
+                        <th><MudText Style="@($"text-align: center; font-weight:bold")">Depends On Projects</MudText></th>
+                        <th><MudText Style="@($"text-align: center; font-weight:bold")">Used By Projects</MudText></th>
+                        <th><MudText Style="@($"text-align: center; font-weight:bold")">Depends On Packages</MudText></th>
+                        <th><MudText Style="@($"text-align: center; font-weight:bold")">Actions</MudText></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var nodeUsage in nodeUsageStatistics)
+                    {
+                        <tr>
+
+                            <td>
+                                <MudTooltip>
+                                    <ChildContent>
+                                        @if (nodeUsage.Node.Type == "Solution")
+                                        {
+                                            <MudText Color="Color.Secondary">@nodeUsage.Node.Id</MudText>
+                                        }
+                                        else
+                                        {
+                                            <MudText Style="@($"color:{Colors.Teal.Lighten1}")">@nodeUsage.Node.Id</MudText>
+                                        }
+                                    </ChildContent>
+                                    <TooltipContent>
+                                        <MudText>@nodeUsage.Node.DirectoryPath</MudText>
+                                    </TooltipContent>
+                                </MudTooltip>
+                            </td>
+                            <td style="text-align: center;">
+                                <MudTooltip>
+                                    <ChildContent>
+                                        <MudText Style="@($"color:{Colors.Teal.Lighten3}")">@nodeUsage.DependsOnProjectsCount</MudText>
+                                    </ChildContent>
+                                    <TooltipContent>
+                                        @foreach (var childProject in nodeUsage.DependsOnProjects)
+                                        {
+                                            <MudText Style="@($"color:{Colors.Teal.Lighten3}")">@childProject.Id</MudText>
+                                        }
+                                    </TooltipContent>
+                                </MudTooltip>
+                            </td>
+                            <td style="text-align: center;">
+                                <MudTooltip>
+                                    <ChildContent>
+                                        <MudText Style="@($"color:{Colors.Teal.Lighten3}")">@nodeUsage.UsedByCount</MudText>
+                                    </ChildContent>
+                                    <TooltipContent>
+                                        @foreach (var childProject in nodeUsage.UsedBy)
+                                        {
+                                            <MudText Style="@($"color:{Colors.Teal.Lighten3}")">@childProject.Id</MudText>
+                                        }
+                                    </TooltipContent>
+                                </MudTooltip>
+                            </td>
+                            <td style="text-align: center;">
+
+                                <MudTooltip>
+                                    <ChildContent>
+                                        <MudText Style="@($"color:{Colors.Lime.Darken3}")">@nodeUsage.DependsOnPackagesCount</MudText>
+                                    </ChildContent>
+                                    <TooltipContent>
+                                        @foreach (var package in nodeUsage.DependsOnPackages)
+                                        {
+                                            <MudText Style="@($"color:{Colors.Lime.Darken3}")">@package.Id [@package.Version]</MudText>
+                                        }
+                                    </TooltipContent>
+                                </MudTooltip>
+
+                            </td>
+                            <td style="@($"text-align: center")">
+                                <MudIconButton Icon="@Icons.Material.TwoTone.FileOpen" Size="Size.Medium" Color="Color.Primary" OnClick="() => ShowDiagramModal(nodeUsage.Node.Id)" />
+                                <MudIconButton Icon="@Icons.Material.Filled.ContentCopy" Size="Size.Medium" Color="Color.Primary" OnClick="() => CopyDiagramToClipboard(nodeUsage.Node.Id)" />
+
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </MudSimpleTable>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private List<Node> nodes = [];
+
+    private List<SolutionReferenceNode> solutionNodes = [];
+
+    private string? selectedSolution;
+
+    private List<NodeUsageStatistics> nodeUsageStatistics = [];
+
+    private string? commonPrefix;
+
+    private DisplayMode displayMode = DisplayMode.All;
+
+    protected override Task OnInitializedAsync()
+    {
+        SolutionRegistry.SetSolutionRegistryListener(new((solution, finish) => {
+            Snackbar.Add($"Loaded - {solution.Id}", Severity.Success);
+
+            if(finish)
+            {
+                Snackbar.Add($"Loaded all solutions", Severity.Success);
+            }
+        }));
+
+        Snackbar.Configuration.PositionClass = Defaults.Classes.Position.BottomRight;
+
+        nodes = SolutionRegistry.Nodes.ToList();
+
+        commonPrefix = Utils.CalculateCommonPrefix(nodes);
+
+        solutionNodes = SolutionRegistry.Solutions.ToList();
+
+        selectedSolution = SolutionRegistry.Solutions.FirstOrDefault()?.Id;
+
+        return Task.CompletedTask;
+    }
+
+    private void AnalyzeSolution()
+    {
+        var solution = solutionNodes.FirstOrDefault(n => n.Id == selectedSolution);
+
+        if(solution is null)
+        {
+            Snackbar.Add($"Select the solution to analyze", Severity.Error);
+        }
+        else if(SolutionRegistry.GetGraph(solution) is var graph && graph is not null)
+        {
+            var projectUsageStatistics = graph
+                .Nodes
+                .OfType<ProjectReferenceNode>()
+                .Select(n => SolutionRegistry.GetDependencyCount(solution, n));
+
+            nodeUsageStatistics = new List<NodeUsageStatistics>
+            {
+                SolutionRegistry.GetDependencyCount(solution, solution)
+            };
+
+            nodeUsageStatistics.AddRange(projectUsageStatistics);
+
+            displayMode = DisplayMode.Solutions;
+        }
+        else
+        {
+            Snackbar.Add($"Analyzing - {selectedSolution}, please wait...", Severity.Normal);
+        }
+    }
+
+    private async Task ShowDiagramModal(string nodeId)
+    {
+        var solution = solutionNodes.FirstOrDefault(n => n.Id == selectedSolution);
+
+        var subGraph = GetSubGraph(nodeId);
+
+        if(subGraph is null)
+        {
+            return;
+        }
+
+        var diagramContent = MermaidSerializer.ToString(subGraph);
+        var parameters = new DialogParameters { ["DiagramContent"] = diagramContent };
+        var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.ExtraLarge, FullWidth = true };
+
+        var dialog = DialogService.Show<DiagramModal>("Mermaid Diagram", parameters, options);
+
+        await dialog.Result;
+    }
+
+    private async Task CopyDiagramToClipboard(string nodeId)
+    {
+        var solution = solutionNodes.FirstOrDefault(n => n.Id == selectedSolution);
+
+        var subGraph = GetSubGraph(nodeId);
+
+        if(subGraph is null)
+        {
+            return;
+        }
+
+        Snackbar.Add($"Copied to clipboard", Severity.Normal);
+
+        await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", MermaidSerializer.ToString(subGraph));
+    }
+
+    private DependencyGraph? GetSubGraph(string nodeId)
+    {
+        var solution = solutionNodes.FirstOrDefault(n => n.Id == selectedSolution);
+
+        if(SolutionRegistry.GetGraph(solution) is var graph && graph is not null)
+        {
+            var project = graph.Nodes.FirstOrDefault(n => n.Id == nodeId);
+
+            displayMode = DisplayMode.Solutions;
+
+            var subGraph = graph.SubGraph(project, n => n.Type is not "Package");
+
+            return subGraph;
+        }
+
+        return default;
+    }
+
+    private void SetDiagnosticSource(MsBuildService msBuildService) =>
+        msBuildService.SetDiagnosticSource(
+            new(
+                project => Snackbar.Add($"Loading - {project.Id}", Severity.Normal),
+                project => Snackbar.Add($"Loaded - {project.ProjectFilePath}", Severity.Success)
+            )
+        );
+
+    private enum DisplayMode
+    {
+        All,
+        Solutions,
+    }
+}

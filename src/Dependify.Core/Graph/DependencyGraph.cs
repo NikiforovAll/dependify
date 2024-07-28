@@ -27,6 +27,33 @@ public sealed partial class DependencyGraph
         return this.Edges.Where(edge => edge.End == node).Select(edge => edge.Start).Distinct();
     }
 
+    public DependencyGraph SubGraph(Node node, Func<Node, bool>? filter = default)
+    {
+        var nodes = this.FindAllDescendants(node, filter).Concat([node]).ToList();
+
+        var edges = this.Edges.Where(edge => nodes.Contains(edge.Start) && filter?.Invoke(edge.End) == true).ToList();
+
+        return new DependencyGraph(node, nodes, edges);
+    }
+
+    private IEnumerable<Node> FindAllDescendants(Node node, Func<Node, bool>? filter = default)
+    {
+        var nodes = new List<Node>();
+
+        foreach (var child in this.FindDescendants(node))
+        {
+            if (filter is not null && !filter(child))
+            {
+                continue;
+            }
+
+            nodes.Add(child);
+            nodes.AddRange(this.FindAllDescendants(child, filter));
+        }
+
+        return nodes;
+    }
+
     public DependencyGraph CopyNoRoot()
     {
         return new DependencyGraph(

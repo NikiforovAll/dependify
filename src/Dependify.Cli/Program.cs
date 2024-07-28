@@ -1,6 +1,5 @@
 using Dependify.Cli.Formatters;
 using Dependify.Core;
-using Microsoft.Extensions.Logging;
 
 var app = new CommandApp(ConfigureServices(out var configuration));
 
@@ -19,6 +18,8 @@ app.Configure(config =>
                 .WithExample("graph", "show", "./path/to/project", "--framework", "net8");
         }
     );
+
+    config.AddCommand<ServeCommand>("serve");
 
 #if DEBUG
     config.PropagateExceptions();
