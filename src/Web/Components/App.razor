@@ -7,6 +7,7 @@
     <base href="/" />
     <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet" />
     <link href="https://mudblazor.com/_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/zoomist@2/zoomist.css" rel="stylesheet" />
     <link rel="icon" type="image/ico" href="favicon.ico" />
     <HeadOutlet @rendermode="InteractiveServer" />
 </head>
@@ -16,6 +17,15 @@
     <script src="_framework/blazor.web.js"></script>
     <script src="https://mudblazor.com/_content/MudBlazor/MudBlazor.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/zoomist@2/zoomist.umd.js"></script>
+    <script>
+        window.initializeZoomist = function () {
+            const zoomist = new Zoomist("#zoomist", {
+                slider: true,
+                zoomer: true,
+            });
+        };
+    </script>
 </body>
 
 </html>

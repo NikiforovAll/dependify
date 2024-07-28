@@ -10,6 +10,7 @@
         {
             await JSRuntime.InvokeVoidAsync("mermaid.init");
         }
+        await JSRuntime.InvokeVoidAsync("initializeZoomist");
     }
 
     private void Close() => MudDialog.Close();
@@ -17,9 +18,17 @@
 
 <MudDialog>
     <DialogContent>
-        <div class="mermaid" style="text-align: center;">
-            @DiagramContent
-        </div>
+        <MudPaper>
+            <div id="zoomist" class="zoomist-container">
+                <div class="zoomist-wrapper" style="width: 100%; height: 100%;">
+                    <div class="zoomist-image">
+                        <div class="mermaid" style="text-align: center; margin: 10px;">
+                            @DiagramContent
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </MudPaper>
     </DialogContent>
     <DialogActions>
         <MudButton Color="Color.Primary" OnClick="Close">Close</MudButton>

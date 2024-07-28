@@ -42,14 +42,16 @@
                     @foreach (var node in nodes)
                     {
                         <tr>
+                            <td>
                             @if (node.Type == "Solution")
                             {
-                                <td><MudText Color="Color.Secondary">@node.Id</MudText></td>
+                                <MudText Color="Color.Secondary">@node.Id</MudText>
                             }
                             else
                             {
-                                <td><MudText Style="@($"color:{Colors.Teal.Lighten1}")">@node.Id</MudText></td>
+                                <MudText Style="@($"color:{Colors.Teal.Lighten1}")">@node.Id</MudText>
                             }
+                            </td>
                             <td><MudText>@node.DirectoryPath.RemovePrefix(commonPrefix)</MudText></td>
                         </tr>
                     }
@@ -69,27 +71,34 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var project in projects)
+                    @foreach (var nodeUsage in nodeUsageStatistics)
                     {
                         <tr>
 
                             <td>
                                 <MudTooltip>
                                     <ChildContent>
-                                        <MudText >@project.Node.Id</MudText>
+                                        @if (nodeUsage.Node.Type == "Solution")
+                                        {
+                                            <MudText Color="Color.Secondary">@nodeUsage.Node.Id</MudText>
+                                        }
+                                        else
+                                        {
+                                            <MudText Style="@($"color:{Colors.Teal.Lighten1}")">@nodeUsage.Node.Id</MudText>
+                                        }
                                     </ChildContent>
                                     <TooltipContent>
-                                        <MudText>@project.Node.DirectoryPath</MudText>
+                                        <MudText>@nodeUsage.Node.DirectoryPath</MudText>
                                     </TooltipContent>
                                 </MudTooltip>
                             </td>
                             <td style="text-align: center;">
                                 <MudTooltip>
                                     <ChildContent>
-                                        <MudText Style="@($"color:{Colors.Teal.Lighten3}")">@project.DependsOnProjectsCount</MudText>
+                                        <MudText Style="@($"color:{Colors.Teal.Lighten3}")">@nodeUsage.DependsOnProjectsCount</MudText>
                                     </ChildContent>
                                     <TooltipContent>
-                                        @foreach (var childProject in project.DependsOnProjects)
+                                        @foreach (var childProject in nodeUsage.DependsOnProjects)
                                         {
                                             <MudText Style="@($"color:{Colors.Teal.Lighten3}")">@childProject.Id</MudText>
                                         }
@@ -99,10 +108,10 @@
                             <td style="text-align: center;">
                                 <MudTooltip>
                                     <ChildContent>
-                                        <MudText Style="@($"color:{Colors.Teal.Lighten3}")">@project.UsedByCount</MudText>
+                                        <MudText Style="@($"color:{Colors.Teal.Lighten3}")">@nodeUsage.UsedByCount</MudText>
                                     </ChildContent>
                                     <TooltipContent>
-                                        @foreach (var childProject in project.UsedBy)
+                                        @foreach (var childProject in nodeUsage.UsedBy)
                                         {
                                             <MudText Style="@($"color:{Colors.Teal.Lighten3}")">@childProject.Id</MudText>
                                         }
@@ -113,10 +122,10 @@
 
                                 <MudTooltip>
                                     <ChildContent>
-                                        <MudText Style="@($"color:{Colors.Lime.Darken3}")">@project.DependsOnPackagesCount</MudText>
+                                        <MudText Style="@($"color:{Colors.Lime.Darken3}")">@nodeUsage.DependsOnPackagesCount</MudText>
                                     </ChildContent>
                                     <TooltipContent>
-                                        @foreach (var package in project.DependsOnPackages)
+                                        @foreach (var package in nodeUsage.DependsOnPackages)
                                         {
                                             <MudText Style="@($"color:{Colors.Lime.Darken3}")">@package.Id [@package.Version]</MudText>
                                         }
@@ -125,8 +134,8 @@
 
                             </td>
                             <td style="@($"text-align: center")">
-                                <MudIconButton Icon="@Icons.Material.TwoTone.FileOpen" Size="Size.Medium" Color="Color.Primary" OnClick="() => ShowDiagramModal(project.Node.Id)" />
-                                <MudIconButton Icon="@Icons.Material.Filled.ContentCopy" Size="Size.Medium" Color="Color.Primary" OnClick="() => CopyDiagramToClipboard(project.Node.Id)" />
+                                <MudIconButton Icon="@Icons.Material.TwoTone.FileOpen" Size="Size.Medium" Color="Color.Primary" OnClick="() => ShowDiagramModal(nodeUsage.Node.Id)" />
+                                <MudIconButton Icon="@Icons.Material.Filled.ContentCopy" Size="Size.Medium" Color="Color.Primary" OnClick="() => CopyDiagramToClipboard(nodeUsage.Node.Id)" />
 
                             </td>
                         </tr>
@@ -144,7 +153,7 @@
 
     private string? selectedSolution;
 
-    private List<NodeUsageStatistics> projects = [];
+    private List<NodeUsageStatistics> nodeUsageStatistics = [];
 
     private string? commonPrefix;
 
@@ -184,10 +193,17 @@
         }
         else if(SolutionRegistry.GetGraph(solution) is var graph && graph is not null)
         {
-            projects = graph
+            var projectUsageStatistics = graph
                 .Nodes
                 .OfType<ProjectReferenceNode>()
-                .Select(n => SolutionRegistry.GetDependencyCount(solution, n)).ToList();
+                .Select(n => SolutionRegistry.GetDependencyCount(solution, n));
+
+            nodeUsageStatistics = new List<NodeUsageStatistics>
+            {
+                SolutionRegistry.GetDependencyCount(solution, solution)
+            };
+
+            nodeUsageStatistics.AddRange(projectUsageStatistics);
 
             displayMode = DisplayMode.Solutions;
         }
