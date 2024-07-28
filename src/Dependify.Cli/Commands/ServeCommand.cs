@@ -26,7 +26,6 @@ internal class ServeCommand() : AsyncCommand<ServeCommandSettings>
         }
 
         await Web.Program.Run(
-            new WebApplicationOptions { WebRootPath = Path.GetFullPath("./src/Web/wwwroot"), },
             webBuilder: builder =>
             {
                 builder

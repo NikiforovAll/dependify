@@ -10,6 +10,7 @@
 @inject ISnackbar Snackbar
 @inject IOptions<MsBuildConfig> MsBuildConfig
 @inject IDialogService DialogService
+@inject IJSRuntime JSRuntime
 
 <PageTitle>Dependify</PageTitle>
 
@@ -228,6 +229,8 @@
         }
 
         Snackbar.Add($"Copied to clipboard", Severity.Normal);
+
+        await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", MermaidSerializer.ToString(subGraph));
     }
 
     private DependencyGraph? GetSubGraph(string nodeId)
