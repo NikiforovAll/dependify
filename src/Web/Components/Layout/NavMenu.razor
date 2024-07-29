@@ -1,6 +1,23 @@
-﻿
-<MudNavMenu>
+﻿<MudNavMenu style="display: flex; flex-direction: column; height: 100%;">
     <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
+    <MudDivider />
+    <div style=" margin-top: auto;padding: 10px;">
+        <MudText>Commit: @GitCommit</MudText>
+        <MudText>Version: @GitVersion</MudText>
+    </div>
 </MudNavMenu>
+
+@code {
+
+    public string GitCommit { get; set; } = default!;
+
+    public string GitVersion { get; set; } = default!;
+
+    protected override void OnInitialized()
+    {
+        GitCommit = ThisAssembly.Git.Commit;
+        GitVersion = ThisAssembly.Git.BaseTag;
+    }
+}
 
 
