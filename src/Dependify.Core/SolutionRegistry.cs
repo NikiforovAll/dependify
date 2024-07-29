@@ -16,6 +16,13 @@ public class SolutionRegistry(FileProviderProjectLocator projectLocator, MsBuild
         var nodes = this.projectLocator.FullScan().ToList();
 
         this.Solutions = nodes.OfType<SolutionReferenceNode>().ToList();
+
+        if (this.Solutions.Count == 0)
+        {
+            var solution = new SolutionReferenceNode();
+
+            this.Solutions.Add(solution);
+        }
         this.Nodes = nodes;
     }
 

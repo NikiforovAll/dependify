@@ -5,7 +5,7 @@ using Web.Components;
 
 public static class Program
 {
-    public static void Main() => Run().GetAwaiter().GetResult();
+    public static Task Main() => Run();
 
     public static async Task Run(
         WebApplicationOptions? appOptions = default,
