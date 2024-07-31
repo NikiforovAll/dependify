@@ -2,7 +2,6 @@ namespace Dependify.Core;
 
 using Buildalyzer;
 using Dependify.Core.Graph;
-using Depends.Core.Graph;
 using Microsoft.Build.Construction;
 using Microsoft.Extensions.Logging;
 

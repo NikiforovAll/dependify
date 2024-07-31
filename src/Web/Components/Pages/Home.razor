@@ -2,7 +2,7 @@
 @using Dependify.Core
 @using Dependify.Core.Graph
 @using Dependify.Core.Serializers
-@using Depends.Core.Graph
+@using Dependify.Core.Graph
 @using Microsoft.Extensions.Options
 @using static Dependify.Core.SolutionRegistry
 
@@ -20,6 +20,7 @@
     <MudIconButton Icon="@Icons.Material.Outlined.PlayCircleFilled" Size="Size.Large" Color="Color.Primary" OnClick="@AnalyzeSolution" />
     <MudSelect T="string" AnchorOrigin="Origin.BottomCenter" AdornmentIcon="@Icons.Material.Filled.RocketLaunch"
         AdornmentColor="Color.Primary" @bind-Value="selectedSolution" Typo="Typo.h6" Label="Solution">
+        <MudSelectItem T="string" />
         @foreach (var solutionNode in solutionNodes)
         {
             <MudSelectItem Value="@solutionNode.Id" />
@@ -43,7 +44,7 @@
                     {
                         <tr>
                             <td>
-                            @if (node.Type == "Solution")
+                            @if (node.Type == NodeConstants.Solution)
                             {
                                 <MudText Color="Color.Secondary">@node.Id</MudText>
                             }
@@ -78,7 +79,7 @@
                             <td>
                                 <MudTooltip>
                                     <ChildContent>
-                                        @if (nodeUsage.Node.Type == "Solution")
+                                        @if (nodeUsage.Node.Type == NodeConstants.Solution)
                                         {
                                             <MudText Color="Color.Secondary">@nodeUsage.Node.Id</MudText>
                                         }
@@ -134,8 +135,25 @@
 
                             </td>
                             <td style="@($"text-align: center")">
-                                <MudIconButton Icon="@Icons.Material.TwoTone.FileOpen" Size="Size.Medium" Color="Color.Primary" OnClick="() => ShowDiagramModal(nodeUsage.Node.Id)" />
-                                <MudIconButton Icon="@Icons.Material.Filled.ContentCopy" Size="Size.Medium" Color="Color.Primary" OnClick="() => CopyDiagramToClipboard(nodeUsage.Node.Id)" />
+                                <MudTooltip Text="Open Graph Diagram">
+                                    <MudIconButton
+                                        Icon="@Icons.Material.TwoTone.FileOpen"
+                                        Size="Size.Medium"
+                                        Color="Color.Primary"
+                                        OnClick="() => ShowDiagramModal(nodeUsage.Node.Id, DiagramStyle.Graph)"/>
+                                </MudTooltip>
+
+                                <MudTooltip Text="Open C4 Diagram">
+                                    <MudIconButton
+                                        Icon="@Icons.Material.Filled.FileOpen"
+                                        Size="Size.Medium"
+                                        Color="Color.Primary"
+                                        OnClick="() => ShowDiagramModal(nodeUsage.Node.Id, DiagramStyle.C4)" />
+                                </MudTooltip>
+
+                                <MudTooltip Text="Copy JSON to Clipboard">
+                                    <MudIconButton Icon="@Icons.Material.Filled.ContentCopy" Size="Size.Medium" Color="Color.Primary" OnClick="() => CopyDiagramToClipboard(nodeUsage.Node.Id)" />
+                                </MudTooltip>
 
                             </td>
                         </tr>
@@ -147,6 +165,8 @@
 </MudContainer>
 
 @code {
+
+    private enum DiagramStyle { Graph, C4 }
     private List<Node> nodes = [];
 
     private List<SolutionReferenceNode> solutionNodes = [];
@@ -189,7 +209,8 @@
 
         if(solution is null)
         {
-            Snackbar.Add($"Select the solution to analyze", Severity.Error);
+            @* Snackbar.Add($"Select the solution to analyze", Severity.Error); *@
+            displayMode = DisplayMode.All;
         }
         else if(SolutionRegistry.GetGraph(solution) is var graph && graph is not null)
         {
@@ -213,22 +234,34 @@
         }
     }
 
-    private async Task ShowDiagramModal(string nodeId)
+    private async Task ShowDiagramModal(string nodeId, DiagramStyle style)
     {
         var solution = solutionNodes.FirstOrDefault(n => n.Id == selectedSolution);
 
-        var subGraph = GetSubGraph(nodeId);
+        var subGraph = GetSubGraph(nodeId, style == DiagramStyle.C4
+            ? _ => true
+            : n => n.Type is not NodeConstants.Package);
 
         if(subGraph is null)
         {
             return;
         }
 
-        var diagramContent = MermaidSerializer.ToString(subGraph);
-        var parameters = new DialogParameters { ["DiagramContent"] = diagramContent };
-        var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.ExtraLarge, FullWidth = true };
+        var diagramContent = style == DiagramStyle.C4
+            ? MermaidC4Serializer.ToString(subGraph)
+            : MermaidSerializer.ToString(subGraph);
 
-        var dialog = DialogService.Show<DiagramModal>("Mermaid Diagram", parameters, options);
+        var parameters = new DialogParameters { ["DiagramContent"] = diagramContent };
+        var options = new DialogOptions
+        {
+            CloseButton = true,
+            MaxWidth = MaxWidth.ExtraExtraLarge,
+            FullWidth = true,
+            FullScreen = true,
+            CloseOnEscapeKey = true,
+        };
+
+        var dialog = DialogService.Show<DiagramModal>(subGraph.Root.Id, parameters, options);
 
         await dialog.Result;
     }
@@ -237,7 +270,7 @@
     {
         var solution = solutionNodes.FirstOrDefault(n => n.Id == selectedSolution);
 
-        var subGraph = GetSubGraph(nodeId);
+        var subGraph = GetSubGraph(nodeId, _ => true);
 
         if(subGraph is null)
         {
@@ -246,10 +279,10 @@
 
         Snackbar.Add($"Copied to clipboard", Severity.Normal);
 
-        await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", MermaidSerializer.ToString(subGraph));
+        await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", JsonGraphSerializer.ToString(subGraph));
     }
 
-    private DependencyGraph? GetSubGraph(string nodeId)
+    private DependencyGraph? GetSubGraph(string nodeId, Predicate<Node>? filter = default)
     {
         var solution = solutionNodes.FirstOrDefault(n => n.Id == selectedSolution);
 
@@ -259,7 +292,7 @@
 
             displayMode = DisplayMode.Solutions;
 
-            var subGraph = graph.SubGraph(project, n => n.Type is not "Package");
+            var subGraph = graph.SubGraph(project, filter);
 
             return subGraph;
         }

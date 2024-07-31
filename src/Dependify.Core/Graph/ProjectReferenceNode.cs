@@ -1,7 +1,6 @@
-﻿namespace Depends.Core.Graph;
+﻿namespace Dependify.Core.Graph;
 
 using Dependify.Core;
-using Dependify.Core.Graph;
 
 public sealed record ProjectReferenceNode : Node
 {
@@ -17,5 +16,5 @@ public sealed record ProjectReferenceNode : Node
         this.Id = file.Name;
     }
 
-    public override string Type { get; } = "Project";
+    public override string Type { get; } = NodeConstants.Project;
 }

@@ -1,7 +1,6 @@
 namespace Dependify.Core;
 
 using Dependify.Core.Graph;
-using Depends.Core.Graph;
 
 public class SolutionRegistry(FileProviderProjectLocator projectLocator, MsBuildService buildService)
 {
@@ -23,6 +22,7 @@ public class SolutionRegistry(FileProviderProjectLocator projectLocator, MsBuild
 
             this.Solutions.Add(solution);
         }
+
         this.Nodes = nodes;
     }
 
@@ -38,7 +38,12 @@ public class SolutionRegistry(FileProviderProjectLocator projectLocator, MsBuild
 
                 var solution = this.Solutions[i];
 
-                var dependencyGraph = this.buildService.AnalyzeReferences(solution, msBuildConfig);
+                var dependencyGraph = solution.IsEmpty
+                    ? this.buildService.AnalyzeReferences(
+                        this.Nodes.OfType<ProjectReferenceNode>().ToList(),
+                        msBuildConfig
+                    )
+                    : this.buildService.AnalyzeReferences(solution, msBuildConfig);
 
                 // TODO: add cache lookup for already loaded solutions
                 this.solutionGraphs.Add(solution, dependencyGraph);

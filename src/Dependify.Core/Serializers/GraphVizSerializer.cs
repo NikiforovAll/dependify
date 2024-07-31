@@ -2,7 +2,6 @@ namespace Dependify.Core.Serializers;
 
 using System.CodeDom.Compiler;
 using Dependify.Core.Graph;
-using Depends.Core.Graph;
 
 public static class GraphvizSerializer
 {

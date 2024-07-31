@@ -27,16 +27,18 @@ public sealed partial class DependencyGraph
         return this.Edges.Where(edge => edge.End == node).Select(edge => edge.Start).Distinct();
     }
 
-    public DependencyGraph SubGraph(Node node, Func<Node, bool>? filter = default)
+    public DependencyGraph SubGraph(Node node, Predicate<Node>? filter = default)
     {
         var nodes = this.FindAllDescendants(node, filter).Concat([node]).ToList();
+
+        // TODO: bug - fix, filter?.Invoke(edge.End) == true
 
         var edges = this.Edges.Where(edge => nodes.Contains(edge.Start) && filter?.Invoke(edge.End) == true).ToList();
 
         return new DependencyGraph(node, nodes, edges);
     }
 
-    private IEnumerable<Node> FindAllDescendants(Node node, Func<Node, bool>? filter = default)
+    private IEnumerable<Node> FindAllDescendants(Node node, Predicate<Node>? filter = default)
     {
         var nodes = new List<Node>();
 

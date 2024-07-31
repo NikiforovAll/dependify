@@ -1,7 +1,6 @@
 namespace Dependify.Core;
 
 using Dependify.Core.Graph;
-using Depends.Core.Graph;
 using Microsoft.Extensions.Logging;
 
 public class ProjectLocator(ILogger<ProjectLocator> logger)

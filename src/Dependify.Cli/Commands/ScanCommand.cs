@@ -4,7 +4,6 @@ using Dependify.Cli.Commands.Settings;
 using Dependify.Cli.Formatters;
 using Dependify.Core;
 using Dependify.Core.Graph;
-using Depends.Core.Graph;
 using Microsoft.Extensions.Logging;
 
 internal class ScanCommand(
@@ -129,9 +128,9 @@ internal class ScanCommand(
 
                 var type = node.Type switch
                 {
-                    "Project" => "[aquamarine3]Project[/]",
-                    "Solution" => "[red3]Solution[/]",
-                    "Package" => "[skyblue1]Package[/]",
+                    NodeConstants.Project => "[aquamarine3]Project[/]",
+                    NodeConstants.Solution => "[red3]Solution[/]",
+                    NodeConstants.Package => "[skyblue1]Package[/]",
                     _ => "Unknown"
                 };
 
@@ -139,7 +138,7 @@ internal class ScanCommand(
                     ? $"/[royalblue1]{descendants.OfType<PackageReferenceNode>().Count()}[/]"
                     : string.Empty;
 
-                var descendantsLabel = node.Type is not "Package"
+                var descendantsLabel = node.Type is not NodeConstants.Package
                     ? $"[darkgreen]{descendants.OfType<ProjectReferenceNode>().Count()}{packagesCountLabel}[/]"
                     : string.Empty;
 

@@ -5,7 +5,6 @@ using Dependify.Cli.Commands.Settings;
 using Dependify.Cli.Formatters;
 using Dependify.Core;
 using Dependify.Core.Graph;
-using Depends.Core.Graph;
 using Microsoft.Extensions.Logging;
 
 internal class ShowCommand(

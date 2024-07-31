@@ -1,10 +1,11 @@
-namespace Depends.Core.Graph;
+namespace Dependify.Core.Graph;
 
 using Dependify.Core;
-using Dependify.Core.Graph;
 
 public sealed record SolutionReferenceNode : Node
 {
+    public bool IsEmpty => this.Id == "<default>";
+
     public SolutionReferenceNode(string? path = default)
     {
         if (!string.IsNullOrWhiteSpace(path))
@@ -16,9 +17,9 @@ public sealed record SolutionReferenceNode : Node
         }
         else
         {
-            this.Id = "<empty>";
+            this.Id = "<default>";
         }
     }
 
-    public override string Type { get; } = "Solution";
+    public override string Type { get; } = NodeConstants.Solution;
 }

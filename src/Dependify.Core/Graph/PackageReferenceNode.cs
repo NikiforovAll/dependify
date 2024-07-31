@@ -1,7 +1,4 @@
-﻿namespace Depends.Core.Graph;
-
-using Dependify.Core.Graph;
-
+﻿namespace Dependify.Core.Graph;
 public sealed record PackageReferenceNode : Node
 {
     public PackageReferenceNode(string name, string? version = default)
@@ -15,6 +12,6 @@ public sealed record PackageReferenceNode : Node
         this.Path = $"https://www.nuget.org/packages/{name}/{version}";
     }
 
-    public override string Type { get; } = "Package";
+    public override string Type { get; } = NodeConstants.Package;
     public string? Version { get; }
 }

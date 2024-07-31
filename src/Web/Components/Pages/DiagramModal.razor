@@ -14,23 +14,37 @@
     }
 
     private void Close() => MudDialog.Close();
+
+    private async Task CopyDiagramToClipboard()
+    {
+        await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", DiagramContent);
+    }
 }
 
 <MudDialog>
     <DialogContent>
-        <MudPaper>
-            <div id="zoomist" class="zoomist-container">
-                <div class="zoomist-wrapper" style="width: 100%; height: 100%;">
-                    <div class="zoomist-image">
-                        <div class="mermaid" style="text-align: center; margin: 10px;">
-                            @DiagramContent
+        @* center vertically *@
+        <div>
+            <div style="margin: 15px;">
+                <MudPaper Elevation="3">
+                    <div id="zoomist" class="zoomist-container">
+                        <div class="zoomist-wrapper">
+                            <div class="zoomist-image">
+                                <div class="mermaid" style="text-align: center; margin: 10px; min-height: 250px;">
+                                    @DiagramContent
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
+                </MudPaper>
             </div>
-        </MudPaper>
+        </div>
     </DialogContent>
     <DialogActions>
+        <MudTooltip Text="Copy Diagram to Clipboard">
+            <MudIconButton Icon="@Icons.Material.Filled.ContentCopy" Size="Size.Medium" Color="Color.Primary"
+                OnClick="@CopyDiagramToClipboard" />
+        </MudTooltip>
         <MudButton Color="Color.Primary" OnClick="Close">Close</MudButton>
     </DialogActions>
 </MudDialog>
