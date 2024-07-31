@@ -11,6 +11,7 @@ COPY tests/Directory.Packages.props tests/Directory.Packages.props
 COPY src/Dependify.Cli/Dependify.Cli.csproj src/Dependify.Cli/
 COPY src/Dependify.Core/Dependify.Core.csproj src/Dependify.Core/
 COPY src/Web/Web.csproj src/Web/
+COPY src/Dependify.Aspire.Hosting/Dependify.Aspire.Hosting.csproj src/Dependify.Aspire.Hosting/
 COPY tests/Dependify.Core.Tests/Dependify.Core.Tests.csproj tests/Dependify.Core.Tests/
 
 RUN dotnet restore
