@@ -6,6 +6,8 @@ builder.AddProject<Projects.aspire_project_Web>("webfrontend")
     .WithExternalHttpEndpoints()
     .WithReference(apiService);
 
-builder.AddDependify("../../aspire-project/");
+builder.AddDependify("dependify1", port: 10000).WithDockerfile("..", "./aspire-project.AppHost/dependify.dockerfile");
+
+builder.AddDependify("dependify2", port: 10001).ServeFrom("../../aspire-project/");
 
 builder.Build().Run();

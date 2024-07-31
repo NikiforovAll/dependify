@@ -19,14 +19,14 @@ public static class DependifyBuilderExtensions
     /// <returns>A reference to the <see cref="IResourceBuilder{T}"/>.</returns>
     public static IResourceBuilder<DependifyResource> AddDependify(
         this IDistributedApplicationBuilder builder,
-        string serveFrom,
+        string name = "dependify",
         string? tag = null,
         int? port = null
     )
     {
         ArgumentNullException.ThrowIfNull(builder);
 
-        var server = new DependifyResource("dependify");
+        var server = new DependifyResource(name);
 
         return builder
             .AddResource(server)
@@ -37,7 +37,6 @@ public static class DependifyBuilderExtensions
             )
             .WithImage(DependifyContainerImageTags.Image, tag ?? DependifyContainerImageTags.Tag)
             .WithImageRegistry(DependifyContainerImageTags.Registry)
-            .WithBindMount(serveFrom, "/workspace/", false)
             .WithAnnotation(
                 new CommandLineArgsCallbackAnnotation(args =>
                 {
@@ -49,6 +48,17 @@ public static class DependifyBuilderExtensions
                     args.Add("Debug");
                 })
             );
+    }
+
+    public static IResourceBuilder<DependifyResource> ServeFrom(
+        this IResourceBuilder<DependifyResource> builder,
+        string serveFrom,
+        bool isReadOnly = true
+    )
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+
+        return builder.WithBindMount(serveFrom, "/workspace/", isReadOnly);
     }
 }
 

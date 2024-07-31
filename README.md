@@ -72,7 +72,7 @@ builder.AddProject<Projects.aspire_project_Web>("webfrontend")
     .WithExternalHttpEndpoints()
     .WithReference(apiService);
 
-builder.AddDependify("../../aspire-project"); // <-- location of .sln file
+builder.AddDependify().ServeFrom("../../aspire-project/"); // <-- location of .sln file
 
 builder.Build().Run();
 ```

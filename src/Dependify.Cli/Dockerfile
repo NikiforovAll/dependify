@@ -20,8 +20,6 @@ WORKDIR /source/src/Dependify.Cli
 RUN ls -la
 RUN dotnet publish --configuration Release -o /app
 
-FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
-COPY --from=build /app ./
 
 ENTRYPOINT ["dotnet", "Dependify.Cli.dll"]
