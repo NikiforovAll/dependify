@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dependify.Core.Tests", "tes
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Web", "src\Web\Web.csproj", "{1358655A-56D9-45B8-80ED-758704415375}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dependify.Aspire.Hosting", "src\Dependify.Aspire.Hosting\Dependify.Aspire.Hosting.csproj", "{7A8ED9D9-0609-495F-9D36-AF696BCAC5D0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -37,6 +39,10 @@ Global
 		{1358655A-56D9-45B8-80ED-758704415375}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1358655A-56D9-45B8-80ED-758704415375}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1358655A-56D9-45B8-80ED-758704415375}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7A8ED9D9-0609-495F-9D36-AF696BCAC5D0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7A8ED9D9-0609-495F-9D36-AF696BCAC5D0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7A8ED9D9-0609-495F-9D36-AF696BCAC5D0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7A8ED9D9-0609-495F-9D36-AF696BCAC5D0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -46,5 +52,6 @@ Global
 		{C439C106-82A3-4303-A989-09A24E2FF221} = {6EFAF0C3-2695-4C03-AAB0-D982DA582BEB}
 		{A13ED5C9-227D-4C24-A04C-617A81878415} = {C3712305-26BF-4E1B-B7E3-2A603443E98F}
 		{1358655A-56D9-45B8-80ED-758704415375} = {6EFAF0C3-2695-4C03-AAB0-D982DA582BEB}
+		{7A8ED9D9-0609-495F-9D36-AF696BCAC5D0} = {6EFAF0C3-2695-4C03-AAB0-D982DA582BEB}
 	EndGlobalSection
 EndGlobal

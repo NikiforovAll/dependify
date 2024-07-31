@@ -96,7 +96,7 @@
                             <td style="text-align: center;">
                                 <MudTooltip>
                                     <ChildContent>
-                                        <MudText Style="@($"color:{Colors.Teal.Lighten3}")">@nodeUsage.DependsOnProjectsCount</MudText>
+                                        <MudText Style="@($"color:{Colors.Teal.Lighten3}; font-weight:bold")">@nodeUsage.DependsOnProjectsCount</MudText>
                                     </ChildContent>
                                     <TooltipContent>
                                         @foreach (var childProject in nodeUsage.DependsOnProjects)
@@ -109,7 +109,7 @@
                             <td style="text-align: center;">
                                 <MudTooltip>
                                     <ChildContent>
-                                        <MudText Style="@($"color:{Colors.Teal.Lighten3}")">@nodeUsage.UsedByCount</MudText>
+                                        <MudText Style="@($"color:{Colors.Teal.Lighten3}; font-weight:bold")">@nodeUsage.UsedByCount</MudText>
                                     </ChildContent>
                                     <TooltipContent>
                                         @foreach (var childProject in nodeUsage.UsedBy)
@@ -123,7 +123,7 @@
 
                                 <MudTooltip>
                                     <ChildContent>
-                                        <MudText Style="@($"color:{Colors.Lime.Darken3}")">@nodeUsage.DependsOnPackagesCount</MudText>
+                                        <MudText Style="@($"color:{Colors.Lime.Darken3}; font-weight:bold")">@nodeUsage.DependsOnPackagesCount</MudText>
                                     </ChildContent>
                                     <TooltipContent>
                                         @foreach (var package in nodeUsage.DependsOnPackages)
@@ -257,7 +257,7 @@
             CloseButton = true,
             MaxWidth = MaxWidth.ExtraExtraLarge,
             FullWidth = true,
-            FullScreen = true,
+            FullScreen = false,
             CloseOnEscapeKey = true,
         };
 

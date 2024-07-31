@@ -62,7 +62,7 @@ jobs:
   push-github-container-registry:
     name: "Push GitHub Container Registry"
     needs: build
-    if: github.ref == 'refs/heads/main' || github.event_name == 'release'
+    if: github.ref == 'refs/heads/main' || github.event_name == 'release' || github.event_name == 'workflow_dispatch'
     permissions:
       contents: read
       packages: write

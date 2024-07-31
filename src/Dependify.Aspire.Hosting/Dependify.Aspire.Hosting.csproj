@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0</TargetFrameworks>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Package">
+    <Product>Dependify.Aspire.Hosting</Product>
+    <Description>Aspire support for Dependify</Description>
+    <PackageTags>$(PackageTags);aspire;cloud-native</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting" />
+  </ItemGroup>
+</Project>
