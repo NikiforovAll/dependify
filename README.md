@@ -13,26 +13,6 @@
 dotnet tool install -g Dependify.Cli
 ```
 
-```bash
-dependify graph --help
-```
-    
-```text
-USAGE:
-    dependify graph [OPTIONS] <COMMAND>
-
-EXAMPLES:
-    dependify graph scan ./path/to/folder --framework net8
-    dependify graph show ./path/to/project --framework net8
-
-OPTIONS:
-    -h, --help    Prints help information
-
-COMMANDS:
-    scan <path>    Scans for projects and solutions and retrives their dependencies
-    show <path>    Shows the dependencies of a project or solution located in the specified path
-```
-
 ## Usage
 
 You can start dependify in `serve mode` and open the browser to navigate the generated graph.
@@ -82,6 +62,27 @@ See the [samples/aspire-project](./samples/aspire-project) for more details.
 ### CLI
 
 You can use the CLI for the automation or if you prefer the terminal.
+
+
+```bash
+dependify graph --help
+```
+    
+```text
+USAGE:
+    dependify graph [OPTIONS] <COMMAND>
+
+EXAMPLES:
+    dependify graph scan ./path/to/folder --framework net8
+    dependify graph show ./path/to/project --framework net8
+
+OPTIONS:
+    -h, --help    Prints help information
+
+COMMANDS:
+    scan <path>    Scans for projects and solutions and retrives their dependencies
+    show <path>    Shows the dependencies of a project or solution located in the specified path
+```
 
 ```bash
 dependify graph scan \

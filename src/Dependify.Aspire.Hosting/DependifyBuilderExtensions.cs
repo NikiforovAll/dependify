@@ -52,13 +52,12 @@ public static class DependifyBuilderExtensions
 
     public static IResourceBuilder<DependifyResource> ServeFrom(
         this IResourceBuilder<DependifyResource> builder,
-        string serveFrom,
-        bool isReadOnly = true
+        string serveFrom
     )
     {
         ArgumentNullException.ThrowIfNull(builder);
 
-        return builder.WithBindMount(serveFrom, "/workspace/", isReadOnly);
+        return builder.WithBindMount(serveFrom, "/workspace/", false);
     }
 }
 

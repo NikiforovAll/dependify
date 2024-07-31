@@ -12,11 +12,11 @@
   <ItemGroup>
     <ProjectReference Include="..\aspire-project.ApiService\aspire-project.ApiService.csproj" />
     <ProjectReference Include="..\aspire-project.Web\aspire-project.Web.csproj" />
-    <ProjectReference Include="..\..\..\src\Dependify.Aspire.Hosting\Dependify.Aspire.Hosting.csproj" IsAspireProjectResource="false"/>
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Aspire.Hosting.AppHost" Version="8.1.0" />
+    <PackageReference Include="Dependify.Aspire.Hosting" Version="1.2.0" />
   </ItemGroup>
 
 </Project>
