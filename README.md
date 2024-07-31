@@ -52,6 +52,35 @@ You can open the mermaid diagram right in the browser.
 ![serve-graph-view](./assets/serve-graph-view.png)
 
 
+### Aspire support
+You can add `Dependify.Web` as resource to your Aspire project.
+
+Add the package to AppHost:
+
+```bash
+dotnet add package Dependify.Aspire.Hosting
+```
+
+Register via `IDistributedApplicationBuilder`. Add the following code to your `Program.cs`:
+
+```csharp
+var builder = DistributedApplication.CreateBuilder(args);
+
+var apiService = builder.AddProject<Projects.aspire_project_ApiService>("apiservice");
+
+builder.AddProject<Projects.aspire_project_Web>("webfrontend")
+    .WithExternalHttpEndpoints()
+    .WithReference(apiService);
+
+builder.AddDependify("../../aspire-project"); // <-- location of .sln file
+
+builder.Build().Run();
+```
+
+See the [samples/aspire-project](./samples/aspire-project) for more details.
+
+### CLI
+
 You can use the CLI for the automation or if you prefer the terminal.
 
 ```bash

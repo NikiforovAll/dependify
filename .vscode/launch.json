@@ -19,7 +19,7 @@
       "request": "launch",
       "preLaunchTask": "build",
       "program": "${workspaceFolder}/src/Dependify.Cli/bin/Debug/net8.0/Dependify.Cli.dll",
-      "args": ["serve", "C:\\Users\\Oleksii_Nikiforov\\dev\\dependify\\cap-aspire"],
+      "args": ["serve", "C:\\Users\\Oleksii_Nikiforov\\dev\\dependify\\samples\\aspire-project"],
       "cwd": "${workspaceFolder}",
       "stopAtEntry": false,
       "console": "externalTerminal",
