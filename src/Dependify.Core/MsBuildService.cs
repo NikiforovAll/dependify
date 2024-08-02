@@ -1,50 +1,36 @@
 namespace Dependify.Core;
 
+using System.Reactive.Subjects;
 using Buildalyzer;
 using Dependify.Core.Graph;
 using Microsoft.Build.Construction;
 using Microsoft.Extensions.Logging;
 
-public record MsBuildConfig
+public class MsBuildService : IDisposable
 {
-    public MsBuildConfig() { }
+    private readonly ILogger<MsBuildService> logger;
+    private readonly ILoggerFactory loggerFactory;
+    private readonly Subject<NodeEvent> subject;
 
-    public MsBuildConfig(bool includePackages, bool fullScan, string? framework)
+    public IObservable<NodeEvent> OnLoadingEvents { get; }
+
+    public MsBuildService(ILogger<MsBuildService> logger, ILoggerFactory loggerFactory)
     {
-        this.IncludePackages = includePackages;
-        this.FullScan = fullScan;
-        this.Framework = framework;
-    }
-
-    public bool IncludePackages { get; set; }
-    public bool FullScan { get; set; }
-    public string? Framework { get; set; }
-
-    public void Deconstruct(out bool includePackages, out bool fullScan, out string? framework)
-    {
-        includePackages = this.IncludePackages;
-        fullScan = this.FullScan;
-        framework = this.Framework;
-    }
-}
-
-public class MsBuildService(ILogger<MsBuildService> logger, ILoggerFactory loggerFactory)
-{
-    private MsBuildServiceListener? listener;
-
-    public void SetDiagnosticSource(MsBuildServiceListener? listener)
-    {
-        this.listener = listener;
+        this.logger = logger;
+        this.loggerFactory = loggerFactory;
+        this.subject = new Subject<NodeEvent>();
+        this.OnLoadingEvents = this.subject;
     }
 
     public DependencyGraph AnalyzeReferences(SolutionReferenceNode solution, MsBuildConfig config)
     {
+        this.logger.LogInformation("Analyzing solution {Solution}", solution.Path);
+        this.subject.OnNext(new NodeEvent(NodeEventType.SolutionLoading, solution.Id, solution.Path));
+
         var analyzerManager = new AnalyzerManager(
             solution.Path,
-            new AnalyzerManagerOptions { LoggerFactory = loggerFactory, }
+            new AnalyzerManagerOptions { LoggerFactory = this.loggerFactory, }
         );
-
-        logger.LogInformation("Analyzing solution {Solution}", solution.Path);
 
         var builder = new DependencyGraph.Builder(solution);
 
@@ -70,6 +56,9 @@ public class MsBuildService(ILogger<MsBuildService> logger, ILoggerFactory logge
                 this.AnalyzeReferencesCore(builder, nodesToScan, config);
             } while (nodesToScan.Count > 0);
         }
+
+        this.logger.LogInformation("Analyzed solution {Solution}", solution.Path);
+        this.subject.OnNext(new NodeEvent(NodeEventType.SolutionLoaded, solution.Id, solution.Path));
 
         return builder.Build();
     }
@@ -103,7 +92,7 @@ public class MsBuildService(ILogger<MsBuildService> logger, ILoggerFactory logge
             return;
         }
 
-        var analyzerManager = new AnalyzerManager(new AnalyzerManagerOptions { LoggerFactory = loggerFactory, });
+        var analyzerManager = new AnalyzerManager(new AnalyzerManagerOptions { LoggerFactory = this.loggerFactory, });
 
         foreach (var path in nodes.Select(n => n.Path))
         {
@@ -134,9 +123,9 @@ public class MsBuildService(ILogger<MsBuildService> logger, ILoggerFactory logge
     {
         var (includePackages, _, framework) = config;
 
-        logger.LogInformation("Analyzing project {Project}", projectNode.Path);
+        this.logger.LogInformation("Analyzing project {Project}", projectNode.Path);
 
-        this.listener?.OnProjectLoading?.Invoke(projectNode);
+        this.subject.OnNext(new NodeEvent(NodeEventType.ProjectLoading, projectNode.Id, projectNode.Path));
 
         var analyzeResults = string.IsNullOrEmpty(framework)
             ? projectAnalyzer.Build()
@@ -148,7 +137,7 @@ public class MsBuildService(ILogger<MsBuildService> logger, ILoggerFactory logge
 
         _ = analyzerResult ?? throw new InvalidOperationException("Unable to load project.");
 
-        this.listener?.OnProjectLoaded?.Invoke(analyzerResult);
+        this.subject.OnNext(new NodeEvent(NodeEventType.ProjectLoaded, projectNode.Id, projectNode.Path));
 
         builder.WithNode(projectNode, true);
 
@@ -172,13 +161,50 @@ public class MsBuildService(ILogger<MsBuildService> logger, ILoggerFactory logge
             }
         }
     }
+
+    public void Dispose()
+    {
+        this.subject.OnCompleted();
+    }
 }
 
-public class MsBuildServiceListener(
-    Action<ProjectReferenceNode>? projectLoading,
-    Action<IAnalyzerResult>? projectLoaded
-)
+public class NodeEvent(NodeEventType eventType, string id, string path)
 {
-    public Action<ProjectReferenceNode>? OnProjectLoading { get; init; } = projectLoading;
-    public Action<IAnalyzerResult>? OnProjectLoaded { get; init; } = projectLoaded;
+    public NodeEventType EventType { get; } = eventType;
+
+    public string Id { get; } = id;
+    public string Path { get; } = path;
+    public string? Message { get; set; }
+}
+
+public enum NodeEventType
+{
+    ProjectLoading,
+    ProjectLoaded,
+    SolutionLoading,
+    SolutionLoaded,
+    Other
+}
+
+public record MsBuildConfig
+{
+    public MsBuildConfig() { }
+
+    public MsBuildConfig(bool includePackages, bool fullScan, string? framework)
+    {
+        this.IncludePackages = includePackages;
+        this.FullScan = fullScan;
+        this.Framework = framework;
+    }
+
+    public bool IncludePackages { get; set; }
+    public bool FullScan { get; set; }
+    public string? Framework { get; set; }
+
+    public void Deconstruct(out bool includePackages, out bool fullScan, out string? framework)
+    {
+        includePackages = this.IncludePackages;
+        fullScan = this.FullScan;
+        framework = this.Framework;
+    }
 }

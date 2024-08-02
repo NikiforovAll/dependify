@@ -16,6 +16,9 @@
 
 <MudToolBar>
     <MudText Typo="Typo.h4">Workbench ⚙️</MudText>
+    <MudTooltip Text="Re-sync Solutions">
+        <MudIconButton Icon="@Icons.Material.Filled.Sync" Size="Size.Medium" Color="Color.Primary" OnClick="() => LoadSolutionsAsync(true)" />
+    </MudTooltip>
     <MudSpacer />
     <MudIconButton Icon="@Icons.Material.Outlined.PlayCircleFilled" Size="Size.Large" Color="Color.Primary" OnClick="@AnalyzeSolution" />
     <MudSelect T="string" AnchorOrigin="Origin.BottomCenter" AdornmentIcon="@Icons.Material.Filled.RocketLaunch"
@@ -44,16 +47,25 @@
                     {
                         <tr>
                             <td>
-                            @if (node.Type == NodeConstants.Solution)
+                            @if (node.Node.Type == NodeConstants.Solution)
                             {
-                                <MudText Color="Color.Secondary">@node.Id</MudText>
+                                <MudText Color="Color.Secondary">@node.Node.Id</MudText>
                             }
                             else
                             {
-                                <MudText Style="@($"color:{Colors.Teal.Lighten1}")">@node.Id</MudText>
+                                <MudText Style="@($"color:{Colors.Teal.Lighten1}")">@node.Node.Id</MudText>
                             }
                             </td>
-                            <td><MudText>@node.DirectoryPath.RemovePrefix(commonPrefix)</MudText></td>
+                            <td>
+                                <MudText Style="@(node.Loaded ? $"color:{Colors.Green.Darken3}": string.Empty)">
+                                    @node.Node.DirectoryPath.RemovePrefix(commonPrefix)
+                                    @if(node.Loaded)
+                                    {
+                                        <MudIcon Icon="@Icons.Material.Filled.Check" Size="Size.Small" />
+                                    }
+                                </MudText>
+
+                            </td>
                         </tr>
                     }
                 </tbody>
@@ -165,9 +177,17 @@
 </MudContainer>
 
 @code {
+    private double ProgressValue = 0;
 
     private enum DiagramStyle { Graph, C4 }
-    private List<Node> nodes = [];
+
+    private List<NodeWithProgress> nodes = [];
+
+    private class NodeWithProgress(Node node, bool loaded)
+    {
+        public Node Node {get; set;} = node;
+        public bool Loaded {get;set;} = loaded;
+    }
 
     private List<SolutionReferenceNode> solutionNodes = [];
 
@@ -179,28 +199,71 @@
 
     private DisplayMode displayMode = DisplayMode.All;
 
-    protected override Task OnInitializedAsync()
+    protected override async Task OnInitializedAsync()
     {
-        SolutionRegistry.SetSolutionRegistryListener(new((solution, finish) => {
-            Snackbar.Add($"Loaded - {solution.Id}", Severity.Success);
-
-            if(finish)
+        SolutionRegistry.OnLoadingEvents.Subscribe(node => {
+            switch(node.EventType)
             {
-                Snackbar.Add($"Loaded all solutions", Severity.Success);
+                case NodeEventType.SolutionLoading:
+                    Snackbar.Add($"Loading - {node.Id}", Severity.Normal);
+                break;
+                case NodeEventType.SolutionLoaded:
+                    Snackbar.Add($"Loaded - {node.Id}", Severity.Success);
+                    break;
+                case NodeEventType.ProjectLoaded:
+                    @* Snackbar.Add($"Loaded - {node.Id}", Severity.Success); *@
+                break;
+                case NodeEventType.Other:
+                    Snackbar.Add(node.Message, Severity.Success);
+                    break;
             }
-        }));
+        });
+
+        SolutionRegistry.OnLoadingEvents.Subscribe(node => {
+            switch(node.EventType)
+            {
+                case NodeEventType.SolutionLoaded:
+                case NodeEventType.ProjectLoaded:
+                    var project = nodes.FirstOrDefault(n => n.Node.Id == node.Id);
+
+                    if(project is not null)
+                    {
+                        project.Loaded = true;
+                        InvokeAsync(StateHasChanged);
+                    }
+                    break;
+            }
+        });
 
         Snackbar.Configuration.PositionClass = Defaults.Classes.Position.BottomRight;
 
-        nodes = SolutionRegistry.Nodes.ToList();
-
-        commonPrefix = Utils.CalculateCommonPrefix(nodes);
-
-        solutionNodes = SolutionRegistry.Solutions.ToList();
+        LoadSolutions();
 
         selectedSolution = SolutionRegistry.Solutions.FirstOrDefault()?.Id;
+    }
 
-        return Task.CompletedTask;
+    private async Task LoadSolutionsAsync(bool force = false)
+    {
+        if(force)
+        {
+            nodes = SolutionRegistry.Nodes.Select(n => new NodeWithProgress(n, false)).ToList();
+
+            Snackbar.Add($"Re-syncing solutions", Severity.Warning);
+
+            Task.Run(async () => {
+                await SolutionRegistry.LoadSolutionsAsync(MsBuildConfig.Value);
+                LoadSolutions();
+            });
+        }
+    }
+
+    private void LoadSolutions()
+    {
+        nodes = SolutionRegistry.Nodes.Select(n => new NodeWithProgress(n, SolutionRegistry.IsLoaded)).ToList();
+
+        commonPrefix = Utils.CalculateCommonPrefix(nodes.Select(n => n.Node));
+
+        solutionNodes = SolutionRegistry.Solutions.ToList();
     }
 
     private void AnalyzeSolution()
@@ -299,14 +362,6 @@
 
         return default;
     }
-
-    private void SetDiagnosticSource(MsBuildService msBuildService) =>
-        msBuildService.SetDiagnosticSource(
-            new(
-                project => Snackbar.Add($"Loading - {project.Id}", Severity.Normal),
-                project => Snackbar.Add($"Loaded - {project.ProjectFilePath}", Severity.Success)
-            )
-        );
 
     private enum DisplayMode
     {

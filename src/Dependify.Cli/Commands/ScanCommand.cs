@@ -42,7 +42,7 @@ internal class ScanCommand(
         var graph = Cli.Utils.DoSomeWork(
             ctx =>
             {
-                Cli.Utils.SetDiagnosticSource(msBuildService, ctx);
+                msBuildService.OnLoadingEvents.SubscribeToLoadingEvents(ctx);
 
                 return msBuildService.AnalyzeReferences(
                     nodes.OfType<ProjectReferenceNode>(),
@@ -79,7 +79,7 @@ internal class ScanCommand(
             var graph = Cli.Utils.DoSomeWork(
                 ctx =>
                 {
-                    Cli.Utils.SetDiagnosticSource(msBuildService, ctx);
+                    msBuildService.OnLoadingEvents.SubscribeToLoadingEvents(ctx);
 
                     return msBuildService.AnalyzeReferences(
                         solution,
