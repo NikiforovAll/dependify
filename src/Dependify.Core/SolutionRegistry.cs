@@ -1,14 +1,31 @@
 namespace Dependify.Core;
 
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using Dependify.Core.Graph;
 
-public class SolutionRegistry(FileProviderProjectLocator projectLocator, MsBuildService buildService)
+public class SolutionRegistry
 {
     private readonly Dictionary<SolutionReferenceNode, DependencyGraph> solutionGraphs = [];
     private static readonly object LockObject = new();
 
-    private readonly FileProviderProjectLocator projectLocator = projectLocator;
-    private readonly MsBuildService buildService = buildService;
+    private readonly FileProviderProjectLocator projectLocator;
+    private readonly MsBuildService buildService;
+
+    private readonly Subject<NodeEvent> subject;
+    public IObservable<NodeEvent> OnLoadingEvents { get; }
+
+    public IList<SolutionReferenceNode> Solutions { get; private set; } = [];
+    public IList<Node> Nodes { get; private set; }
+    public bool IsLoaded { get; private set; }
+
+    public SolutionRegistry(FileProviderProjectLocator projectLocator, MsBuildService buildService)
+    {
+        this.projectLocator = projectLocator;
+        this.buildService = buildService;
+        this.subject = new Subject<NodeEvent>();
+        this.OnLoadingEvents = buildService.OnLoadingEvents.Merge(this.subject);
+    }
 
     public void LoadRegistry()
     {
@@ -28,8 +45,6 @@ public class SolutionRegistry(FileProviderProjectLocator projectLocator, MsBuild
 
     public Task LoadSolutionsAsync(MsBuildConfig msBuildConfig, CancellationToken cancellationToken = default)
     {
-        this.buildService.SetDiagnosticSource(this.listener);
-
         lock (LockObject)
         {
             for (var i = 0; i < this.Solutions.Count; i++)
@@ -48,7 +63,13 @@ public class SolutionRegistry(FileProviderProjectLocator projectLocator, MsBuild
                 // TODO: add cache lookup for already loaded solutions
                 this.solutionGraphs.Add(solution, dependencyGraph);
 
-                this.solutionRegistryListener?.SolutionLoaded?.Invoke(solution, solution == this.Solutions[^1]);
+                if(solution == this.Solutions[^1])
+                {
+                    this.subject.OnNext(new NodeEvent(NodeEventType.Other, string.Empty)
+                    {
+                        Message = "All solutions loaded"
+                    });
+                }
             }
 
             this.IsLoaded = true;
@@ -71,30 +92,11 @@ public class SolutionRegistry(FileProviderProjectLocator projectLocator, MsBuild
             );
     }
 
-    public IList<SolutionReferenceNode> Solutions { get; private set; } = [];
-    public IList<Node> Nodes { get; private set; }
-    public bool IsLoaded { get; private set; }
-
     public DependencyGraph? GetGraph(SolutionReferenceNode solution)
     {
         return this.solutionGraphs.TryGetValue(solution, out var graph) ? graph : null;
     }
-
-    private MsBuildServiceListener? listener;
-    private SolutionRegistryListener? solutionRegistryListener;
-
-    public void SetBuildServiceDiagnosticSource(MsBuildServiceListener? listener = default)
-    {
-        this.listener = listener;
-    }
-
-    public void SetSolutionRegistryListener(SolutionRegistryListener? listener = default)
-    {
-        this.solutionRegistryListener = listener;
-    }
 }
-
-public record SolutionRegistryListener(Action<SolutionReferenceNode, bool>? SolutionLoaded);
 
 public record NodeUsageStatistics(
     Node Node,

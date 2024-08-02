@@ -205,7 +205,7 @@ internal class ShowCommand(
             return Cli.Utils.DoSomeWork(
                 ctx =>
                 {
-                    Cli.Utils.SetDiagnosticSource(msBuildService, ctx);
+                    msBuildService.OnLoadingEvents.SubscribeToLoadingEvents(ctx);
 
                     return msBuildService.AnalyzeReferences(
                         solution,
@@ -221,7 +221,7 @@ internal class ShowCommand(
             return Cli.Utils.DoSomeWork(
                 ctx =>
                 {
-                    Cli.Utils.SetDiagnosticSource(msBuildService, ctx);
+                    msBuildService.OnLoadingEvents.SubscribeToLoadingEvents(ctx);
 
                     return msBuildService.AnalyzeReferences(
                         project,

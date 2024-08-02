@@ -1,5 +1,6 @@
 namespace Dependify.Cli.Commands;
 
+using System.Reactive.Linq;
 using System.Threading;
 using Dependify.Cli.Commands.Settings;
 using Dependify.Core;
@@ -40,16 +41,6 @@ internal class ServeCommand() : AsyncCommand<ServeCommandSettings>
                 builder.Services.AddHostedService(sp => new SolutionRegistryService(
                     sp.GetRequiredService<SolutionRegistry>(),
                     sp.GetRequiredService<IOptions<MsBuildConfig>>(),
-                    new MsBuildServiceListener(
-                        project => { },
-                        project =>
-                        {
-                            if (!isLoggingEnabled)
-                            {
-                                AnsiConsole.MarkupLine($"[green] Loaded: [/] [grey]{project.ProjectFilePath}[/]");
-                            }
-                        }
-                    ),
                     isLoggingEnabled
                 ));
 
@@ -112,18 +103,24 @@ internal class ServeCommandSettings : BaseAnalyzeCommandSettings { }
 internal class SolutionRegistryService(
     SolutionRegistry solutionRegistry,
     IOptions<MsBuildConfig> msBuildConfig,
-    MsBuildServiceListener? listener,
     bool isLoggingEnabled
 ) : BackgroundService
 {
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        Task.Run(() =>
-            {
-                solutionRegistry.SetBuildServiceDiagnosticSource(listener);
-                solutionRegistry.LoadRegistry();
-                solutionRegistry.LoadSolutionsAsync(msBuildConfig.Value);
-            })
+        Task.Run(
+                () =>
+                {
+                    if (!isLoggingEnabled)
+                    {
+                        solutionRegistry.OnLoadingEvents.SubscribeToLoadingEvents(default!);
+                    }
+
+                    solutionRegistry.LoadRegistry();
+                    solutionRegistry.LoadSolutionsAsync(msBuildConfig.Value);
+                },
+                stoppingToken
+            )
             .ContinueWith(
                 _ =>
                 {

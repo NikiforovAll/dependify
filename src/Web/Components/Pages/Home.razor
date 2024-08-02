@@ -181,14 +181,20 @@
 
     protected override Task OnInitializedAsync()
     {
-        SolutionRegistry.SetSolutionRegistryListener(new((solution, finish) => {
-            Snackbar.Add($"Loaded - {solution.Id}", Severity.Success);
-
-            if(finish)
+        SolutionRegistry.OnLoadingEvents.Subscribe(node => {
+            switch(node.EventType)
             {
-                Snackbar.Add($"Loaded all solutions", Severity.Success);
+                case NodeEventType.SolutionLoading:
+                    Snackbar.Add($"Loading - {node.Path}", Severity.Normal);
+                break;
+                case NodeEventType.SolutionLoaded:
+                    Snackbar.Add($"Loaded - {node.Path}", Severity.Success);
+                    break;
+                case NodeEventType.Other:
+                    Snackbar.Add(node.Message, Severity.Success);
+                    break;
             }
-        }));
+        });
 
         Snackbar.Configuration.PositionClass = Defaults.Classes.Position.BottomRight;
 
@@ -299,14 +305,6 @@
 
         return default;
     }
-
-    private void SetDiagnosticSource(MsBuildService msBuildService) =>
-        msBuildService.SetDiagnosticSource(
-            new(
-                project => Snackbar.Add($"Loading - {project.Id}", Severity.Normal),
-                project => Snackbar.Add($"Loaded - {project.ProjectFilePath}", Severity.Success)
-            )
-        );
 
     private enum DisplayMode
     {
