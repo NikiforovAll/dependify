@@ -25,7 +25,7 @@ public class MsBuildService : IDisposable
     public DependencyGraph AnalyzeReferences(SolutionReferenceNode solution, MsBuildConfig config)
     {
         this.logger.LogInformation("Analyzing solution {Solution}", solution.Path);
-        this.subject.OnNext(new NodeEvent(NodeEventType.SolutionLoading, solution.Path));
+        this.subject.OnNext(new NodeEvent(NodeEventType.SolutionLoading, solution.Id, solution.Path));
 
         var analyzerManager = new AnalyzerManager(
             solution.Path,
@@ -58,7 +58,7 @@ public class MsBuildService : IDisposable
         }
 
         this.logger.LogInformation("Analyzed solution {Solution}", solution.Path);
-        this.subject.OnNext(new NodeEvent(NodeEventType.SolutionLoaded, solution.Path));
+        this.subject.OnNext(new NodeEvent(NodeEventType.SolutionLoaded, solution.Id, solution.Path));
 
         return builder.Build();
     }
@@ -125,7 +125,7 @@ public class MsBuildService : IDisposable
 
         this.logger.LogInformation("Analyzing project {Project}", projectNode.Path);
 
-        this.subject.OnNext(new NodeEvent(NodeEventType.ProjectLoading, projectNode.Path));
+        this.subject.OnNext(new NodeEvent(NodeEventType.ProjectLoading, projectNode.Id, projectNode.Path));
 
         var analyzeResults = string.IsNullOrEmpty(framework)
             ? projectAnalyzer.Build()
@@ -137,7 +137,7 @@ public class MsBuildService : IDisposable
 
         _ = analyzerResult ?? throw new InvalidOperationException("Unable to load project.");
 
-        this.subject.OnNext(new NodeEvent(NodeEventType.ProjectLoaded, projectNode.Path));
+        this.subject.OnNext(new NodeEvent(NodeEventType.ProjectLoaded, projectNode.Id, projectNode.Path));
 
         builder.WithNode(projectNode, true);
 
@@ -168,9 +168,11 @@ public class MsBuildService : IDisposable
     }
 }
 
-public class NodeEvent(NodeEventType eventType, string path)
+public class NodeEvent(NodeEventType eventType, string id, string path)
 {
     public NodeEventType EventType { get; } = eventType;
+
+    public string Id { get; } = id;
     public string Path { get; } = path;
     public string? Message { get; set; }
 }

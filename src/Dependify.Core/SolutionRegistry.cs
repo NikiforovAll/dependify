@@ -14,6 +14,7 @@ public class SolutionRegistry
 
     private readonly Subject<NodeEvent> subject;
     public IObservable<NodeEvent> OnLoadingEvents { get; }
+    public IObservable<double> OnProgress { get; }
 
     public IList<SolutionReferenceNode> Solutions { get; private set; } = [];
     public IList<Node> Nodes { get; private set; }
@@ -45,6 +46,8 @@ public class SolutionRegistry
 
     public Task LoadSolutionsAsync(MsBuildConfig msBuildConfig, CancellationToken cancellationToken = default)
     {
+        this.IsLoaded = false;
+
         lock (LockObject)
         {
             for (var i = 0; i < this.Solutions.Count; i++)
@@ -60,15 +63,16 @@ public class SolutionRegistry
                     )
                     : this.buildService.AnalyzeReferences(solution, msBuildConfig);
 
-                // TODO: add cache lookup for already loaded solutions
-                this.solutionGraphs.Add(solution, dependencyGraph);
+                this.solutionGraphs[solution] = dependencyGraph;
 
-                if(solution == this.Solutions[^1])
+                if (solution == this.Solutions[^1])
                 {
-                    this.subject.OnNext(new NodeEvent(NodeEventType.Other, string.Empty)
-                    {
-                        Message = "All solutions loaded"
-                    });
+                    this.subject.OnNext(
+                        new NodeEvent(NodeEventType.Other, string.Empty, string.Empty)
+                        {
+                            Message = "All solutions loaded"
+                        }
+                    );
                 }
             }
 
