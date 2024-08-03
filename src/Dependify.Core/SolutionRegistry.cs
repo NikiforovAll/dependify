@@ -118,11 +118,9 @@ public class SolutionRegistry
                     continue;
                 }
 
-                var projectNode = new ProjectReferenceNode(node.Path);
+                builder.WithNode(node);
 
-                builder.WithNode(projectNode);
-
-                builder.WithEdge(new Edge(solutionNode, projectNode));
+                builder.WithEdge(new Edge(solutionNode, node));
 
                 foreach (var edgeNode in graph.FindDescendants(node))
                 {
