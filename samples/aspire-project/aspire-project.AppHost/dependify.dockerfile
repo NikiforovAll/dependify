@@ -1,4 +1,4 @@
-FROM ghcr.io/nikiforovall/dependify:main
+FROM ghcr.io/nikiforovall/dependify:latest
 
 COPY ./. /workspace/
 
