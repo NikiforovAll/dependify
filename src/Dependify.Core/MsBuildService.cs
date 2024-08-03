@@ -183,6 +183,7 @@ public enum NodeEventType
     ProjectLoaded,
     SolutionLoading,
     SolutionLoaded,
+    RegistryLoaded,
     Other
 }
 
@@ -196,6 +197,8 @@ public record MsBuildConfig
         this.FullScan = fullScan;
         this.Framework = framework;
     }
+
+    public static MsBuildConfig Default => new(includePackages: true, fullScan: true, framework: null);
 
     public bool IncludePackages { get; set; }
     public bool FullScan { get; set; }

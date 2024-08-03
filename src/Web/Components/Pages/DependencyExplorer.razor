@@ -1,0 +1,180 @@
+﻿@page "/dependency-explorer"
+@using Dependify.Core
+@using Dependify.Core.Graph
+@using Dependify.Core.Serializers
+@using Microsoft.Extensions.Options
+
+@inject SolutionRegistry SolutionRegistry
+@inject ISnackbar Snackbar
+@inject IOptions<MsBuildConfig> MsBuildConfig
+@inject IDialogService DialogService
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Dependify</PageTitle>
+
+<MudToolBar>
+    <MudText Typo="Typo.h4">Explorer 🔎</MudText>
+    @if (!Loaded)
+    {
+        <MudProgressCircular Color="Color.Primary" Size="Size.Medium" Indeterminate="true" />
+    }
+    <MudSpacer />
+    <MudTooltip Text="Unselect All">
+        <MudIconButton Icon="@Icons.Material.Outlined.CleaningServices" Size="Size.Medium" Color="Color.Primary"
+            OnClick="@UnselectAll" />
+    </MudTooltip>
+    <MudTooltip Text="Copy Diagram to Clipboard">
+        <MudIconButton Icon="@Icons.Material.Filled.ContentCopy" Size="Size.Medium" Color="Color.Primary"
+            OnClick="@CopyDiagramToClipboard" />
+    </MudTooltip>
+</MudToolBar>
+
+<MudContainer MaxWidth="MaxWidth.ExtraExtraLarge">
+    <MudPaper Class="pa-4 ma-4" Elevation="3">
+        @foreach (var nodeId in NodeIds)
+        {
+            <MudChip T="string" Color="@(SelectedNodeIds.Contains(nodeId) ? Color.Primary : Color.Default)"
+                OnClick="@(async () => await ToggleIncludeAsync(nodeId))"
+                Size="@(NodeIds.Count > 10 ? Size.Medium : Size.Large)" CloseIcon="@Icons.Material.Rounded.LibraryAdd"
+                OnClose="@(async () => await IncludeDependencies(nodeId))" Variant="@(nodeId.EndsWith(".sln") ?   Variant.Outlined : Variant.Text)">
+                @nodeId
+            </MudChip>
+        }
+    </MudPaper>
+    <div>
+        <div style="margin: 15px;">
+            <MudPaper Elevation="2">
+                @if (!string.IsNullOrEmpty(DiagramContent))
+                {
+                    <div class="mermaid" style="text-align: center; margin: 10px; min-height: 200px;">
+                        @DiagramContent
+                    </div>
+                }
+            </MudPaper>
+        </div>
+    </div>
+</MudContainer>
+
+@code {
+
+    private bool Loaded { get; set; }
+
+    private HashSet<string> NodeIds { get; set; } = [];
+    private HashSet<string> SelectedNodeIds { get; set; } = [];
+
+    private string DiagramContent { get; set; } = "graph LR \n empty[👋]";
+    protected override void OnInitialized()
+    {
+        Loaded = SolutionRegistry.IsLoaded;
+
+        if (Loaded)
+        {
+            FullLoadRegistry();
+        }
+
+        SolutionRegistry.OnLoadingEvents.Subscribe(node =>
+        {
+            switch (node.EventType)
+            {
+                case NodeEventType.RegistryLoaded:
+                    FullLoadRegistry();
+                    Loaded = true;
+                    break;
+                default:
+                    NodeIds.Add(node.Id);
+                    break;
+            }
+            InvokeAsync(StateHasChanged);
+        });
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JSRuntime.InvokeVoidAsync("mermaid.init");
+        }
+    }
+
+    private void FullLoadRegistry()
+    {
+        this.NodeIds = SolutionRegistry.Nodes.Select(n => n.Id).ToHashSet();
+    }
+
+    private async Task ToggleIncludeAsync(string nodeId)
+    {
+        if (SelectedNodeIds.Contains(nodeId))
+        {
+            SelectedNodeIds.Remove(nodeId);
+        }
+        else
+        {
+            SelectedNodeIds.Add(nodeId);
+        }
+
+        RefreshDiagram();
+
+        await JSRuntime.InvokeVoidAsync("redrawMermaidDiagram", DiagramContent);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task IncludeDependencies(string nodeId)
+    {
+        var includePackages = false;
+
+        var graph = SolutionRegistry.GetFullGraph();
+
+        var node = graph.Nodes.FirstOrDefault(n => n.Id == nodeId);
+
+        if (node is null)
+        {
+            return;
+        }
+
+        var nodes = graph.FindDescendants(node).OfType<ProjectReferenceNode>();
+
+        SelectedNodeIds.Add(nodeId);
+
+        foreach (var n in nodes)
+        {
+            SelectedNodeIds.Add(n.Id);
+        }
+
+        RefreshDiagram();
+
+        await JSRuntime.InvokeVoidAsync("redrawMermaidDiagram", DiagramContent);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void RefreshDiagram()
+    {
+        var subGraph = GetSubGraph(this.SelectedNodeIds);
+
+        DiagramContent = MermaidSerializer.ToString(subGraph);
+    }
+
+    private DependencyGraph? GetSubGraph(HashSet<string> nodeIds)
+    {
+        var graph = SolutionRegistry.GetFullGraph();
+
+        var subGraph = graph.SubGraph(n => nodeIds.Contains(n.Id));
+
+        return subGraph;
+    }
+
+    private async Task CopyDiagramToClipboard()
+    {
+        await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", DiagramContent);
+        Snackbar.Add($"Copied to clipboard", Severity.Normal);
+    }
+
+    private async Task UnselectAll()
+    {
+        SelectedNodeIds.Clear();
+
+        RefreshDiagram();
+
+        await JSRuntime.InvokeVoidAsync("redrawMermaidDiagram", DiagramContent);
+        await InvokeAsync(StateHasChanged);
+    }
+}

@@ -26,6 +26,20 @@
             });
         };
     </script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+
+        window.redrawMermaidDiagram = async (content) => {
+            const drawDiagram = async function () {
+                let element = document.querySelector('.mermaid');
+                const graphDefinition = content;
+                const { svg } = await mermaid.render('graphDiv', graphDefinition);
+                element.innerHTML = svg;
+            };
+
+            await drawDiagram();
+        };
+    </script>
 </body>
 
 </html>

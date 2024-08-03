@@ -19,6 +19,11 @@ public static class MermaidSerializer
 
         writer.Indent++;
 
+        foreach (var node in graph.Nodes.OfType<SolutionReferenceNode>())
+        {
+            writer.WriteLine($"{node.Id}");
+        }
+
         foreach (var node in graph.Nodes.OfType<ProjectReferenceNode>())
         {
             writer.WriteLine($"{node.Id}:::project");
