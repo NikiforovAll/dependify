@@ -68,7 +68,7 @@ public class SolutionRegistry
                 if (solution == this.Solutions[^1])
                 {
                     this.subject.OnNext(
-                        new NodeEvent(NodeEventType.Other, string.Empty, string.Empty)
+                        new NodeEvent(NodeEventType.RegistryLoaded, string.Empty, string.Empty)
                         {
                             Message = "All solutions loaded"
                         }
@@ -82,7 +82,7 @@ public class SolutionRegistry
         return Task.CompletedTask;
     }
 
-    public NodeUsageStatistics GetDependencyCount(SolutionReferenceNode solution, Node node)
+    public NodeUsage GetDependencyCount(SolutionReferenceNode solution, Node node)
     {
         var graph = this.GetGraph(solution);
 
@@ -100,9 +100,42 @@ public class SolutionRegistry
     {
         return this.solutionGraphs.TryGetValue(solution, out var graph) ? graph : null;
     }
+
+    public DependencyGraph GetFullGraph()
+    {
+        var builder = new DependencyGraph.Builder(new SolutionReferenceNode());
+
+        foreach (var (solution, graph) in this.solutionGraphs)
+        {
+            var solutionNode = new SolutionReferenceNode(solution.Path);
+
+            builder.WithNode(solutionNode);
+
+            foreach (var node in graph.Nodes)
+            {
+                if (node.Type == NodeConstants.Solution)
+                {
+                    continue;
+                }
+
+                var projectNode = new ProjectReferenceNode(node.Path);
+
+                builder.WithNode(projectNode);
+
+                builder.WithEdge(new Edge(solutionNode, projectNode));
+
+                foreach (var edgeNode in graph.FindDescendants(node))
+                {
+                    builder.WithEdge(new Edge(node, edgeNode));
+                }
+            }
+        }
+
+        return builder.Build();
+    }
 }
 
-public record NodeUsageStatistics(
+public record NodeUsage(
     Node Node,
     IList<ProjectReferenceNode> DependsOnProjects,
     IList<PackageReferenceNode> DependsOnPackages,

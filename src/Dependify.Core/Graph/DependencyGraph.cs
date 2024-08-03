@@ -38,6 +38,27 @@ public sealed partial class DependencyGraph
         return new DependencyGraph(node, nodes, edges);
     }
 
+    public DependencyGraph SubGraph(Predicate<Node>? filter = default)
+    {
+        var nodes = this
+            .Nodes.SelectMany(n =>
+            {
+                if (filter is not null && !filter(n))
+                {
+                    return [];
+                }
+
+                return this.FindAllDescendants(n, filter).Concat([n]);
+            })
+            .ToList();
+
+        // TODO: bug - fix, filter?.Invoke(edge.End) == true
+
+        var edges = this.Edges.Where(edge => nodes.Contains(edge.Start) && filter?.Invoke(edge.End) == true).ToList();
+
+        return new DependencyGraph(new SolutionReferenceNode(), nodes, edges);
+    }
+
     private IEnumerable<Node> FindAllDescendants(Node node, Predicate<Node>? filter = default)
     {
         var nodes = new List<Node>();

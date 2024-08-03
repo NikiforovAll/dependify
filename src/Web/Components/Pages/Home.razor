@@ -2,7 +2,6 @@
 @using Dependify.Core
 @using Dependify.Core.Graph
 @using Dependify.Core.Serializers
-@using Dependify.Core.Graph
 @using Microsoft.Extensions.Options
 @using static Dependify.Core.SolutionRegistry
 
@@ -185,15 +184,15 @@
 
     private class NodeWithProgress(Node node, bool loaded)
     {
-        public Node Node {get; set;} = node;
-        public bool Loaded {get;set;} = loaded;
+        public Node Node { get; set; } = node;
+        public bool Loaded { get;set; } = loaded;
     }
 
     private List<SolutionReferenceNode> solutionNodes = [];
 
     private string? selectedSolution;
 
-    private List<NodeUsageStatistics> nodeUsageStatistics = [];
+    private List<NodeUsage> nodeUsageStatistics = [];
 
     private string? commonPrefix;
 
@@ -213,7 +212,7 @@
                 case NodeEventType.ProjectLoaded:
                     @* Snackbar.Add($"Loaded - {node.Id}", Severity.Success); *@
                 break;
-                case NodeEventType.Other:
+                case NodeEventType.RegistryLoaded:
                     Snackbar.Add(node.Message, Severity.Success);
                     break;
             }
@@ -282,7 +281,7 @@
                 .OfType<ProjectReferenceNode>()
                 .Select(n => SolutionRegistry.GetDependencyCount(solution, n));
 
-            nodeUsageStatistics = new List<NodeUsageStatistics>
+            nodeUsageStatistics = new List<NodeUsage>
             {
                 SolutionRegistry.GetDependencyCount(solution, solution)
             };

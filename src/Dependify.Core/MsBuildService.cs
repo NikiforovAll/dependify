@@ -183,6 +183,7 @@ public enum NodeEventType
     ProjectLoaded,
     SolutionLoading,
     SolutionLoaded,
+    RegistryLoaded,
     Other
 }
 
