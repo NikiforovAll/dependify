@@ -6,6 +6,13 @@
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg)](https://conventionalcommits.org)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/nikiforovall/dependify/blob/main/LICENSE.md)
 
+Dependify is a tool to visualize dependencies in your .NET application. You can start dependify in `serve` mode to visualize dependencies in a browser or use the `CLI` if you prefer the terminal.
+
+| Package          | Version                                                                                                  | Description                          |
+| ---------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| `Dependify.Cli`  | [![Nuget](https://img.shields.io/nuget/v/Dependify.Cli.svg)](https://nuget.org/packages/Dependify.Cli)   | CLI                    |
+| `Dependify.Core` | [![Nuget](https://img.shields.io/nuget/v/Dependify.Core.svg)](https://nuget.org/packages/Dependify.Core) | Core library       |
+| ` Dependify.Aspire.Hosting` | [![Nuget](https://img.shields.io/nuget/v/Dependify.Aspire.Hosting.svg)](https://nuget.org/packages/Dependify.Aspire.Hosting) | Aspire support |
 
 ## Install
 
@@ -13,26 +20,54 @@
 dotnet tool install -g Dependify.Cli
 ```
 
-## Usage
-
-You can start dependify in `serve mode` and open the browser to navigate the generated graph.
-
 ```bash
-dependify serve $dev/keycloak-authorization-services-dotnet/
+❯ dependify -h
+USAGE:
+    Dependify.Cli.dll [OPTIONS] <COMMAND>
+
+EXAMPLES:
+    Dependify.Cli.dll graph scan ./path/to/folder --framework net8
+    Dependify.Cli.dll graph show ./path/to/project --framework net8
+
+OPTIONS:
+    -h, --help    Prints help information
+
+COMMANDS:
+    graph
+    serve <path>
 ```
 
-You will see the following output in the terminal. Open <http:localhost:9999/> and browse the graph.
+## Usage
+
+```bash
+dependify serve $dev/path-to-folder/
+```
+
+You will see something like the following output in the terminal.
 
 ![serve-terminal](./assets/serve-terminal.png)
 
-![serve-main-window](./assets/serve-main-window.png)
+### Features
+
+-   Workbench ⚙️
+-   Dependency Explorer 🔎
+
+Workbench gives you high level overview of the dependencies in the solution.
+
+<video src="https://github.com/user-attachments/assets/e3eecf59-864d-4a7b-9411-60ee7a364c57" controls="controls">
+</video>
 
 You can open the mermaid diagram right in the browser.
 
 ![serve-graph-view](./assets/serve-graph-view.png)
 
+Dependency Explorer allows you to select the dependencies you want to see.
+
+<video src="https://github.com/user-attachments/assets/555df3ef-b0c3-4354-911f-81d4dfd07607" controls="controls">
+</video>
 
 ### Aspire support
+
 You can add `Dependify.Web` as resource to your Aspire project.
 
 Add the package to AppHost:
@@ -63,11 +98,10 @@ See the [samples/aspire-project](./samples/aspire-project) for more details.
 
 You can use the CLI for the automation or if you prefer the terminal.
 
-
 ```bash
 dependify graph --help
 ```
-    
+
 ```text
 USAGE:
     dependify graph [OPTIONS] <COMMAND>
@@ -84,19 +118,20 @@ COMMANDS:
     show <path>    Shows the dependencies of a project or solution located in the specified path
 ```
 
+The command `scan` will scan the folder for projects and solutions and retrieve their dependencies. The ouput can be in `tui` or `mermaid` format. The `tui` or terminal user interface is the default output format.
+
 ```bash
-dependify graph scan \
-    $dev/keycloak-authorization-services-dotnet/ \
-    --framework net8
+dependify graph scan $dev/keycloak-authorization-services-dotnet/
 ```
 
 ![tui-demo1](./assets/tui-demo1.png)
+
+Here is how to change the output format to `mermaid`.
 
 ```bash
 dependify graph scan \
     $dev/keycloak-authorization-services-dotnet/ \
     --exclude-sln \
-    --framework net8 \
     --format mermaid \
     --output ./graph.md
 ```
@@ -173,7 +208,34 @@ graph LR
     Keycloak.AuthServices.IntegrationTests.csproj --> TestWebApiWithControllers.csproj
     classDef project fill:#74200154;
     classDef package fill:#22aaee;
+```
 
+### API
+
+You can use the API to build your own tools.
+
+```bash
+dotnet add package Dependify.Core
+```
+
+```csharp
+var services = new ServiceCollection()
+    .AddLogging()
+    .AddSingleton<ProjectLocator>()
+    .AddSingleton<MsBuildService>();
+
+var provider = services.BuildServiceProvider();
+
+var locator = provider.GetRequiredService<ProjectLocator>();
+var msBuildService = provider.GetRequiredService<MsBuildService>();
+
+var nodes = locator.FullScan("C:\\Users\\joel\\source\\repos\\Dependify");
+
+var solution = nodes.OfType<SolutionReferenceNode>().FirstOrDefault();
+
+var graph = msBuildService.AnalyzeReferences(solution, MsBuildConfig.Default);
+
+var subgraph = graph.SubGraph(n => n.Id.Contains("AwesomeProjectName"));
 ```
 
 ## Build and Development

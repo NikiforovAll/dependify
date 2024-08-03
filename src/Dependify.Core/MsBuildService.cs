@@ -198,6 +198,8 @@ public record MsBuildConfig
         this.Framework = framework;
     }
 
+    public static MsBuildConfig Default => new(includePackages: true, fullScan: true, framework: null);
+
     public bool IncludePackages { get; set; }
     public bool FullScan { get; set; }
     public string? Framework { get; set; }

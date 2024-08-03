@@ -9,7 +9,7 @@ public class ProjectLocator(ILogger<ProjectLocator> logger)
     private const string ProjectFileExtension = ".csproj";
 
     /// <summary>
-    /// Scans the specified path for .csproj and solution files.
+    /// Scans the specified path for .csproj and solution files recursively.
     /// </summary>
     /// <param name="path"></param>
     /// <returns></returns>
@@ -19,7 +19,7 @@ public class ProjectLocator(ILogger<ProjectLocator> logger)
     }
 
     /// <summary>
-    /// Scans the specified path for .csproj and solution files.
+    /// Scans the specified path for .csproj and solution files recursively with a max depth of 1.
     /// </summary>
     /// <param name="path"></param>
     /// <returns></returns>
