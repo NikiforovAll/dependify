@@ -19,7 +19,16 @@
       "request": "launch",
       "preLaunchTask": "build",
       "program": "${workspaceFolder}/src/Dependify.Cli/bin/Debug/net8.0/Dependify.Cli.dll",
-      "args": ["serve", "C:\\Users\\Oleksii_Nikiforov\\dev\\dependify\\samples\\aspire-project"],
+      "args": [
+        "serve",
+        "C:\\Users\\Oleksii_Nikiforov\\dev\\dependify\\samples\\aspire-project",
+        "--endpoint",
+        "http://localhost:1234/v1/chat/completions",
+        "--model-id",
+        "LM Studio Community/Meta-Llama-3-8B-Instruct-GGUF",
+        "--api-key",
+        "lm-studio"
+      ],
       "cwd": "${workspaceFolder}",
       "stopAtEntry": false,
       "console": "externalTerminal",

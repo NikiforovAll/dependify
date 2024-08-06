@@ -249,3 +249,22 @@ var subgraph = graph.SubGraph(n => n.Id.Contains("AwesomeProjectName"));
 `dotnet tool install --global --add-source ./Artefacts Dependify.Cli --prerelease`
 
 `dotnet tool uninstall Dependify.Cli -g`
+
+```bash
+dotnet watch run --project ./src/Dependify.Cli/ -- \
+    serve $dev/cap-aspire/ \
+    --endpoint "http://localhost:1234/v1/chat/completions" \
+    --model-id "LM Studio Community/Meta-Llama-3-8B-Instruct-GGUF" \
+    --api-key "lm-studio" \
+    --log-level "Information"
+```
+
+```bash
+dotnet watch run --project ./src/Dependify.Cli/ -- \
+    serve $dev/cap-aspire/ \
+    --endpoint "https://genai-epam-run-01.openai.azure.com/" \
+    --deployment-name "gpt-35-turbo" \
+    --api-key "" \
+    --log-level "Information"
+```
+

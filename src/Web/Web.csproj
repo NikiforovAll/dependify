@@ -11,6 +11,7 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="MudBlazor" />
+    <PackageReference Include="Microsoft.SemanticKernel" />
   </ItemGroup>
 
   <ItemGroup>

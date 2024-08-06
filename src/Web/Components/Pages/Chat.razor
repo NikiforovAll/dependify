@@ -1,0 +1,96 @@
+@page "/chat"
+
+@using Dependify.Core
+@using Microsoft.Extensions.Options
+@using Web
+@using Microsoft.SemanticKernel
+
+@inject SolutionRegistry SolutionRegistry
+@inject IDialogService DialogService
+@inject IOptions<OpenAIOptions> OpenAIOptions
+@inject IServiceProvider ServiceProvider
+
+<PageTitle>Chat</PageTitle>
+
+<div class="d-flex flex-grow-1 flex-row">
+    <MudPaper Elevation="25" Class="py-4 flex-grow-1 ma-4">
+        <MudToolBar>
+            <MudIcon Icon="@Icons.Material.Outlined.ChatBubble" Style="margin-right:10px" Size="Size.Large"></MudIcon>
+            <MudTooltip Text="Open Graph Diagram">
+                <MudIconButton Icon="@Icons.Material.TwoTone.FileOpen" Size="Size.Medium" Color="Color.Primary"
+                    OnClick="@(() => ShowDiagramModal())" />
+            </MudTooltip>
+            <MudTooltip Text="Clear Chat">
+                <MudIconButton Icon="@Icons.Material.Outlined.CleaningServices" Size="Size.Medium" Color="Color.Primary"
+                    OnClick="ClearChat" />
+            </MudTooltip>
+            <MudTooltip Text="@ContextInformation">
+                <MudIconButton Icon="@Icons.Material.Outlined.Info" Size="Size.Medium" Color="Color.Primary" />
+            </MudTooltip>
+            <MudSpacer />
+            <MudSelect T="string" AnchorOrigin="Origin.BottomCenter" AdornmentIcon="@Icons.Material.Filled.RocketLaunch"
+                AdornmentColor="Color.Primary" @bind-Value="selectedSolution" Typo="Typo.subtitle1" Label="Solution">
+                @foreach (var solutionNode in solutionNodes)
+
+                {
+                    <MudSelectItem Value="@solutionNode.Id" />
+                }
+            </MudSelect>
+        </MudToolBar>
+
+        <div class="d-flex flex-column px-4" style="max-height:70vh;min-height:70vh; overflow:scroll;"
+            id="chatContainer">
+            @foreach (var message in messages)
+            {
+                <div class="d-flex flex-row my-4">
+                    <MudIcon
+                        Icon="@(message.Role == ChatRole.User ? Icons.Material.Outlined.Person : @Icons.Material.Outlined.MarkChatUnread)"
+                        Color="@(message.Role == ChatRole.User ? Color.Primary : Color.Secondary)"
+                        Class="mr-2" />
+                    <div>
+                        <MudText Typo="Typo.caption" Style="font-size: small!important;">
+                            @message.CreatedDate.ToString("dd MMM, yyyy hh:mm tt")
+                        </MudText>
+                        <MudText Typo="Typo.body1"
+                            Style=" padding: 15px;background-color: rgb(214, 210, 210);border-radius: 5px;margin-top:5px">
+                            @message.Message
+                        </MudText>
+                    </div>
+                </div>
+            }
+        </div>
+        <MudPaper Elevation="25" Class="d-flex flex-row px-2 mx-4" Style="">
+            <MudTextField
+                T="string"
+                Lines="3"
+                Label="Message"
+                Placeholder="Enter your message... (ctrl+enter)"
+                id="chatInput"
+                DisableUnderLine="true"
+                Class="mt-n2 mx-4"
+                @bind-Value="CurrentMessage"
+                For="@(()=> CurrentMessage)" />
+                <MudButton
+                    OnClick="@(() => SubmitMessageAsync(null))"
+                    StartIcon="@Icons.Material.Outlined.Send"
+                    Color="Color.Primary"
+                    ButtonType="ButtonType.Button">Send</MudButton>
+        </MudPaper>
+        @if(IsLoadingResponse)
+        {
+            <MudProgressLinear Indeterminate="true"/>
+        }
+    </MudPaper>
+</div>
+
+<script>
+    window.bindCtrlEnter = function (dotNetHelper) {
+        document.addEventListener('keydown', function (event) {
+            if (event.ctrlKey && event.key === 'Enter') {
+                const chatInputValue = document.getElementById('chatInput').value;
+                dotNetHelper.invokeMethodAsync('SubmitMessageAsync', chatInputValue);
+                document.getElementById('chatInput').value = '';
+            }
+        });
+    };
+</script>

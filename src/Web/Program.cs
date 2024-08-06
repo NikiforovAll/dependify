@@ -1,5 +1,6 @@
 namespace Web;
 
+using MudBlazor;
 using MudBlazor.Services;
 using Web.Components;
 
@@ -17,8 +18,10 @@ public static class Program
 
         var builder = WebApplication.CreateBuilder(appOptions);
 
-        // Add MudBlazor services
-        builder.Services.AddMudServices();
+        builder.Services.AddMudServices(c =>
+        {
+            c.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.BottomRight;
+        });
 
         // Add services to the container.
         builder.Services.AddRazorComponents().AddInteractiveServerComponents();
