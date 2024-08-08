@@ -2,6 +2,7 @@ namespace Web.Components.Pages;
 
 using Dependify.Core.Graph;
 using Dependify.Core.Serializers;
+using Markdig;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using Microsoft.SemanticKernel;
@@ -20,20 +21,13 @@ public partial class Chat
 
     private string? selectedSolution;
 
+    private MarkdownPipeline pipeline = new MarkdownPipelineBuilder().UseDiagrams().Build();
+
     protected override Task OnInitializedAsync()
     {
         this.LoadSolutions();
 
         this.selectedSolution = this.SolutionRegistry.Solutions.FirstOrDefault()?.Id;
-
-        this.messages.Add(
-            new ChatMessage
-            {
-                Message = "Welcome to Dependify, a chatbot that helps you manage your dependencies.",
-                CreatedDate = DateTime.Now,
-                Role = ChatRole.Assistant
-            }
-        );
 
         return Task.CompletedTask;
     }
@@ -85,10 +79,14 @@ public partial class Chat
                     - You can only use the information from the diagram.
                     - Instead of mentioning the diagram in your answer, use the "source"
                     - Use the diagram as source of knowledge.
-                    - When user asks for a project or a package, find the best match use it even if it is misspelled or abbreviated
+                    - When user asks for a project or a package, find the best match use it even if it is misspelled or abbreviated. If you don't find a match, ask the user to provide more information.
                     - When referring to a project or package, use full name of the project as it is in the diagram
                     - Short answers are preferred
-                    - Provide exhaustive answers, for example if multiple projects or packages match the user's question, provide all of them
+                    - Generate answer in Markdown format
+                    - If the question is about dependencies, provide a short version mermaidjs diagram to prove your answer. The mermaid diagram is enclosed in ```mermaid ``` markdown code block.
+                    - Be concise and focus on the question.
+                    - If you found something that could be improved - suggest it. Add "💡Tip:" followed by the suggestion.
+                    - Don't ask for more information, just answer the question.
 
                     Task:
                     Give a answer to the question: "{message}"
@@ -98,54 +96,66 @@ public partial class Chat
 
                 var resultTask = this.ServiceProvider.GetRequiredService<Kernel>().InvokePromptAsync(prompt);
 
-                resultTask.ContinueWith(
-                    async result =>
-                    {
-                        var functionResult = await result;
-                        this.messages.Add(
-                            new ChatMessage
-                            {
-                                Message = functionResult.ToString(),
-                                CreatedDate = DateTime.Now,
-                                Role = ChatRole.Assistant
-                            }
-                        );
-
-                        this.IsLoadingResponse = false;
-
-                        await this.InvokeAsync(this.StateHasChanged);
-                    },
-                    TaskScheduler.FromCurrentSynchronizationContext()
-                );
-
                 var delayTask = Task.Delay(TimeSpan.FromSeconds(3));
 
+                this.CurrentMessage = string.Empty;
                 this.IsLoadingResponse = true;
+                await this.InvokeAsync(this.StateHasChanged);
 
-                Task.WhenAny(resultTask, delayTask)
-                    .ContinueWith(
-                        async task =>
+                var t = await Task.WhenAny(resultTask, delayTask);
+
+                if (t == delayTask)
+                {
+                    this.messages.Add(
+                        new ChatMessage
                         {
-                            if (task.Result == delayTask)
-                            {
-                                this.messages.Add(
-                                    new ChatMessage
-                                    {
-                                        Message = "It will take some time to answer your question, please wait...⏰",
-                                        CreatedDate = DateTime.Now,
-                                        Role = ChatRole.DisplayOnly
-                                    }
-                                );
-                            }
-
-                            await this.InvokeAsync(this.StateHasChanged);
-                        },
-                        TaskScheduler.FromCurrentSynchronizationContext()
+                            Message = "It will take some time to answer your question, please wait...⏰",
+                            CreatedDate = DateTime.Now,
+                            Role = ChatRole.DisplayOnly
+                        }
                     );
-            }
 
-            this.CurrentMessage = string.Empty;
-            await this.InvokeAsync(this.StateHasChanged);
+                    await this.InvokeAsync(this.StateHasChanged);
+                }
+                try
+                {
+                    await resultTask;
+
+                    var functionResult = await resultTask;
+                    this.messages.Add(
+                        new ChatMessage
+                        {
+                            Message = functionResult.ToString(),
+                            CreatedDate = DateTime.Now,
+                            Role = ChatRole.Assistant
+                        }
+                    );
+                }
+                catch (Exception exception)
+                {
+                    var error =
+                        "Error occurred while processing your request, please try again later. Error: "
+                        + exception.Message;
+                    this.Snackbar.Add(error, Severity.Error);
+
+                    this.messages.Add(
+                        new ChatMessage
+                        {
+                            Message = error,
+                            CreatedDate = DateTime.Now,
+                            Role = ChatRole.DisplayOnly
+                        }
+                    );
+                }
+
+                this.IsLoadingResponse = false;
+
+                await Task.Run(async () =>
+                {
+                    await this.InvokeAsync(this.StateHasChanged);
+                    await JSRuntime.InvokeVoidAsync("mermaid.init");
+                });
+            }
         }
     }
 
@@ -190,8 +200,7 @@ public partial class Chat
         this.messages.Add(
             new ChatMessage
             {
-                Message =
-                    "Or by setting --endpoint, --deployment-name and --api-key command line arguments.",
+                Message = "Or by setting --endpoint, --deployment-name and --api-key command line arguments.",
                 CreatedDate = DateTime.Now,
                 Role = ChatRole.DisplayOnly
             }
@@ -259,7 +268,7 @@ public partial class Chat
 
     private string ContextInformation =>
         this.OpenAIOptions.Value.IsEnabled
-            ? $"Model: {this.OpenAIOptions.Value.DeploymentName ?? this.OpenAIOptions.Value.ModelId}, Endpoint: {this.OpenAIOptions.Value.Endpoint}"
+            ? $"Deployment: {this.OpenAIOptions.Value.DeploymentName}, Model: {this.OpenAIOptions.Value.ModelId}, Endpoint: {this.OpenAIOptions.Value.Endpoint}"
             : "Model: None, Endpoint: None";
 }
 

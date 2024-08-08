@@ -23,11 +23,11 @@
         "serve",
         "C:\\Users\\Oleksii_Nikiforov\\dev\\dependify\\samples\\aspire-project",
         "--endpoint",
-        "http://localhost:1234/v1/chat/completions",
+        "http://localhost:60759/",
         "--model-id",
-        "LM Studio Community/Meta-Llama-3-8B-Instruct-GGUF",
+        "phi3:mini",
         "--api-key",
-        "lm-studio"
+        "apiKey"
       ],
       "cwd": "${workspaceFolder}",
       "stopAtEntry": false,

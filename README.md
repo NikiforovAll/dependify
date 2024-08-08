@@ -262,9 +262,14 @@ dotnet watch run --project ./src/Dependify.Cli/ -- \
 ```bash
 dotnet watch run --project ./src/Dependify.Cli/ -- \
     serve $dev/cap-aspire/ \
-    --endpoint "https://genai-epam-run-01.openai.azure.com/" \
+    --endpoint "" \
     --deployment-name "gpt-35-turbo" \
     --api-key "" \
     --log-level "Information"
 ```
+Set the API key for the AppHost with the following command:
 
+```bash
+dotnet user-secrets set "Parameters:api-key" "<api-key>"
+dotnet user-secrets set "Parameters:endpoint" "<endpoint>"
+```

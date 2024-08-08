@@ -40,24 +40,6 @@ public partial class Home
         {
             switch (node.EventType)
             {
-                case NodeEventType.SolutionLoading:
-                    this.Snackbar.Add($"Loading - {node.Id}", Severity.Normal);
-                    break;
-                case NodeEventType.SolutionLoaded:
-                    this.Snackbar.Add($"Loaded - {node.Id}", Severity.Success);
-                    break;
-                case NodeEventType.ProjectLoaded:
-                    break;
-                case NodeEventType.RegistryLoaded:
-                    this.Snackbar.Add(node.Message, Severity.Success);
-                    break;
-            }
-        });
-
-        this.SolutionRegistry.OnLoadingEvents.Subscribe(node =>
-        {
-            switch (node.EventType)
-            {
                 case NodeEventType.SolutionLoaded:
                 case NodeEventType.ProjectLoaded:
                     var project = this.nodes.FirstOrDefault(n => n.Node.Id == node.Id);
