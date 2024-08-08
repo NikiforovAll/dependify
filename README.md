@@ -8,11 +8,11 @@
 
 Dependify is a tool to visualize dependencies in your .NET application. You can start dependify in `serve` mode to visualize dependencies in a browser or use the `CLI` if you prefer the terminal.
 
-| Package          | Version                                                                                                  | Description                          |
-| ---------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------ |
-| `Dependify.Cli`  | [![Nuget](https://img.shields.io/nuget/v/Dependify.Cli.svg)](https://nuget.org/packages/Dependify.Cli)   | CLI                    |
-| `Dependify.Core` | [![Nuget](https://img.shields.io/nuget/v/Dependify.Core.svg)](https://nuget.org/packages/Dependify.Core) | Core library       |
-| ` Dependify.Aspire.Hosting` | [![Nuget](https://img.shields.io/nuget/v/Dependify.Aspire.Hosting.svg)](https://nuget.org/packages/Dependify.Aspire.Hosting) | Aspire support |
+| Package                     | Version                                                                                                                      | Description    |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | -------------- |
+| `Dependify.Cli`             | [![Nuget](https://img.shields.io/nuget/v/Dependify.Cli.svg)](https://nuget.org/packages/Dependify.Cli)                       | CLI            |
+| `Dependify.Core`            | [![Nuget](https://img.shields.io/nuget/v/Dependify.Core.svg)](https://nuget.org/packages/Dependify.Core)                     | Core library   |
+| `Dependify.Aspire.Hosting` | [![Nuget](https://img.shields.io/nuget/v/Dependify.Aspire.Hosting.svg)](https://nuget.org/packages/Dependify.Aspire.Hosting) | Aspire support |
 
 ## Install
 
