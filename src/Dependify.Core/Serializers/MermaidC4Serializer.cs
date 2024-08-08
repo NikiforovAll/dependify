@@ -33,7 +33,7 @@ public static class MermaidC4Serializer
 
                 foreach (var component in packages)
                 {
-                    writer.WriteLine($"Component({component.Id}, \"{component.Id}\", \"Package\", \"\")");
+                    writer.WriteLine($"Component({component.Id}, \"{component.Id}:{component.Version}\", \"Package\", \"\")");
                     writer.WriteLine(
                         $"UpdateElementStyle({component.Id}, $fontColor=\"white\", $bgColor=\"grey\", $borderColor=\"#99CB0E\")"
                     );

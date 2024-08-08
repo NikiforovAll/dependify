@@ -51,6 +51,7 @@ You will see something like the following output in the terminal.
 
 -   Workbench ⚙️
 -   Dependency Explorer 🔎
+-   Chat (AI) 🤖
 
 Workbench gives you high level overview of the dependencies in the solution.
 
@@ -64,6 +65,18 @@ You can open the mermaid diagram right in the browser.
 Dependency Explorer allows you to select the dependencies you want to see.
 
 <video src="https://github.com/user-attachments/assets/555df3ef-b0c3-4354-911f-81d4dfd07607" controls="controls">
+</video>
+
+Chat (AI) allows you to ask questions about the dependencies.
+
+```bash
+dependify serve $dev/cap-aspire/ \
+    --endpoint https://api.openai.azure.com/ \
+    --deployment-name gpt-4o-mini \
+    --api-key <api-key>
+```
+
+<video src="https://github.com/user-attachments/assets/b07a8b53-d3d2-4ef8-9a8c-8c3dbd865350" controls="controls">
 </video>
 
 ### Aspire support
@@ -249,3 +262,27 @@ var subgraph = graph.SubGraph(n => n.Id.Contains("AwesomeProjectName"));
 `dotnet tool install --global --add-source ./Artefacts Dependify.Cli --prerelease`
 
 `dotnet tool uninstall Dependify.Cli -g`
+
+```bash
+dotnet watch run --project ./src/Dependify.Cli/ -- \
+    serve $dev/cap-aspire/ \
+    --endpoint "http://localhost:1234/v1/chat/completions" \
+    --model-id "LM Studio Community/Meta-Llama-3-8B-Instruct-GGUF" \
+    --api-key "lm-studio" \
+    --log-level "Information"
+```
+
+```bash
+dotnet watch run --project ./src/Dependify.Cli/ -- \
+    serve $dev/cap-aspire/ \
+    --endpoint "" \
+    --deployment-name "gpt-35-turbo" \
+    --api-key "" \
+    --log-level "Information"
+```
+Set the API key for the AppHost with the following command:
+
+```bash
+dotnet user-secrets set "Parameters:api-key" "<api-key>"
+dotnet user-secrets set "Parameters:endpoint" "<endpoint>"
+```

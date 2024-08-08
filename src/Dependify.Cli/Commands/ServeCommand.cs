@@ -7,6 +7,8 @@ using Dependify.Core;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.SemanticKernel;
+using Web;
 
 internal class ServeCommand() : AsyncCommand<ServeCommandSettings>
 {
@@ -26,7 +28,7 @@ internal class ServeCommand() : AsyncCommand<ServeCommandSettings>
             return 1;
         }
 
-        await Web.Program.Run(
+        await Program.Run(
             webBuilder: builder =>
             {
                 builder
@@ -37,6 +39,55 @@ internal class ServeCommand() : AsyncCommand<ServeCommandSettings>
                 builder.Services.AddSingleton<FileProviderProjectLocator>();
                 builder.Services.AddTransient<MsBuildService>();
                 builder.Services.AddSingleton<SolutionRegistry>();
+
+                var aiOptions = builder.Configuration.GetSection("DEPENDIFY:AI").Get<OpenAIOptions>() ?? new();
+
+                if (!string.IsNullOrWhiteSpace(settings.DeploymentName))
+                {
+                    aiOptions.DeploymentName = settings.DeploymentName;
+                }
+                if (!string.IsNullOrWhiteSpace(settings.AIEndpoint))
+                {
+                    aiOptions.Endpoint = settings.AIEndpoint;
+                }
+                if (!string.IsNullOrWhiteSpace(settings.AIApiKey))
+                {
+                    aiOptions.ApiKey = settings.AIApiKey;
+                }
+                if (!string.IsNullOrWhiteSpace(settings.ModelId))
+                {
+                    aiOptions.ModelId = settings.ModelId;
+                }
+
+                if (aiOptions is { IsEnabled: true })
+                {
+                    var kernelBuilder = builder.Services.AddKernel();
+
+                    if (aiOptions.IsAzureOpenAI)
+                    {
+                        kernelBuilder.AddAzureOpenAIChatCompletion(
+                            deploymentName: aiOptions!.DeploymentName,
+                            endpoint: aiOptions.Endpoint,
+                            apiKey: aiOptions.ApiKey
+                        );
+                    }
+                    else
+                    {
+                        kernelBuilder.AddOpenAIChatCompletion(
+                            aiOptions!.ModelId,
+                            new Uri(aiOptions.Endpoint),
+                            aiOptions.ApiKey
+                        );
+                    }
+                }
+
+                builder.Services.Configure<OpenAIOptions>(config =>
+                {
+                    config.DeploymentName = aiOptions.DeploymentName;
+                    config.Endpoint = aiOptions.Endpoint;
+                    config.ApiKey = aiOptions.ApiKey;
+                    config.ModelId = aiOptions.ModelId;
+                });
 
                 builder.Services.AddHostedService(sp => new SolutionRegistryService(
                     sp.GetRequiredService<SolutionRegistry>(),
@@ -98,7 +149,20 @@ internal class ServeCommand() : AsyncCommand<ServeCommandSettings>
     }
 }
 
-internal class ServeCommandSettings : BaseAnalyzeCommandSettings { }
+internal class ServeCommandSettings : BaseAnalyzeCommandSettings
+{
+    [CommandOption("--endpoint")]
+    public string AIEndpoint { get; set; } = default!;
+
+    [CommandOption("--deployment-name")]
+    public string DeploymentName { get; set; } = default!;
+
+    [CommandOption("--model-id")]
+    public string ModelId { get; set; } = default!;
+
+    [CommandOption("--api-key")]
+    public string AIApiKey { get; set; } = default!;
+}
 
 internal class SolutionRegistryService(
     SolutionRegistry solutionRegistry,

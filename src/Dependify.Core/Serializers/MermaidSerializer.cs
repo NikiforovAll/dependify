@@ -3,19 +3,26 @@ namespace Dependify.Core.Serializers;
 using System.CodeDom.Compiler;
 using Dependify.Core.Graph;
 
+public record MermaidSerializerOptions(bool ShowPackages = true, string Orientation = "LR")
+{
+    public static MermaidSerializerOptions Empty => new();
+}
+
 public static class MermaidSerializer
 {
     private const string ProjectBackgroundColor = "#74200154";
     private const string PackageBackgroundColor = "#22aaee";
 
-    public static string ToString(DependencyGraph graph)
+    public static string ToString(DependencyGraph graph, MermaidSerializerOptions? options = default)
     {
         ArgumentNullException.ThrowIfNull(graph);
+
+        options ??= MermaidSerializerOptions.Empty;
 
         using var stringWriter = new StringWriter();
         using var writer = new IndentedTextWriter(stringWriter);
 
-        writer.WriteLine("graph LR");
+        writer.WriteLine($"graph {options.Orientation}");
 
         writer.Indent++;
 
@@ -31,12 +38,12 @@ public static class MermaidSerializer
 
         var packages = graph.Nodes.OfType<PackageReferenceNode>().ToArray();
 
-        if (packages.Length > 0)
+        if (packages.Length > 0 && options.ShowPackages)
         {
             writer.WriteLine($"subgraph Packages");
             foreach (var node in graph.Nodes.OfType<PackageReferenceNode>())
             {
-                writer.WriteLine($"{node.Id}:::package");
+                writer.WriteLine($"{node.Id}[{node.Id}:{node.Version}]:::package");
             }
             writer.WriteLine("end");
         }

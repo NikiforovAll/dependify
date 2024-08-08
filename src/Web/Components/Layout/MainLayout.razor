@@ -1,4 +1,7 @@
-﻿@inherits LayoutComponentBase
+﻿@using Dependify.Core
+@inherits LayoutComponentBase
+
+@inject SolutionRegistry SolutionRegistry
 
 <MudThemeProvider Theme="@_theme" IsDarkMode="_isDarkMode" />
 <MudPopoverProvider />
@@ -6,8 +9,13 @@
 <MudSnackbarProvider />
 <MudLayout>
     <MudAppBar Elevation="1">
-        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start"
+            OnClick="@((e) => DrawerToggle())" />
         <MudText Typo="Typo.h5" Class="ml-3">Dependify</MudText>
+        @if (!Loaded)
+        {
+            <MudProgressCircular Color="Color.Primary" Class="mx-8" Size="Size.Small" Indeterminate="true" />
+        }
         <MudSpacer />
         <MudIconButton Icon="@(DarkLightModeButtonIcon)" Color="Color.Inherit" OnClick="@DarkModeToggle" />
         <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Inherit"
@@ -33,16 +41,40 @@
     private bool _isDarkMode = false;
     private MudTheme? _theme = null;
 
+    private bool Loaded { get; set; }
+
     protected override void OnInitialized()
     {
         base.OnInitialized();
 
-        _theme = new()
+        this.Loaded = this.SolutionRegistry.IsLoaded;
+
+        this.SolutionRegistry.OnLoadingEvents.Subscribe(node =>
         {
-            PaletteLight = _lightPalette,
-            PaletteDark = _darkPalette,
-            LayoutProperties = new LayoutProperties()
-        };
+            switch (node.EventType)
+            {
+                case NodeEventType.SolutionLoading:
+                    this.Snackbar.Add($"Loading - {node.Id}", Severity.Normal);
+                    break;
+                case NodeEventType.SolutionLoaded:
+                    this.Snackbar.Add($"Loaded - {node.Id}", Severity.Success);
+                    break;
+                case NodeEventType.ProjectLoaded:
+                    break;
+                case NodeEventType.RegistryLoaded:
+                    this.Loaded = true;
+                    this.InvokeAsync(this.StateHasChanged);
+                    this.Snackbar.Add(node.Message, Severity.Success);
+                    break;
+            }
+        });
+
+        _theme = new()
+            {
+                PaletteLight = _lightPalette,
+                PaletteDark = _darkPalette,
+                LayoutProperties = new LayoutProperties()
+            };
     }
 
 
@@ -57,43 +89,43 @@
     }
 
     private readonly PaletteLight _lightPalette = new()
-    {
-        Black = "#110e2d",
-        AppbarText = "#424242",
-        AppbarBackground = "rgba(255,255,255,0.8)",
-        DrawerBackground = "#ffffff",
-        GrayLight = "#e8e8e8",
-        GrayLighter = "#f9f9f9",
-    };
+        {
+            Black = "#110e2d",
+            AppbarText = "#424242",
+            AppbarBackground = "rgba(255,255,255,0.8)",
+            DrawerBackground = "#ffffff",
+            GrayLight = "#e8e8e8",
+            GrayLighter = "#f9f9f9",
+        };
 
     private readonly PaletteDark _darkPalette = new()
-    {
-        Primary = "#7e6fff",
-        Surface = "#1e1e2d",
-        Background = "#1a1a27",
-        BackgroundGray = "#151521",
-        AppbarText = "#92929f",
-        AppbarBackground = "rgba(26,26,39,0.8)",
-        DrawerBackground = "#1a1a27",
-        ActionDefault = "#74718e",
-        ActionDisabled = "#9999994d",
-        ActionDisabledBackground = "#605f6d4d",
-        TextPrimary = "#b2b0bf",
-        TextSecondary = "#92929f",
-        TextDisabled = "#ffffff33",
-        DrawerIcon = "#92929f",
-        DrawerText = "#92929f",
-        GrayLight = "#2a2833",
-        GrayLighter = "#1e1e2d",
-        Info = "#4a86ff",
-        Success = "#3dcb6c",
-        Warning = "#ffb545",
-        Error = "#ff3f5f",
-        LinesDefault = "#33323e",
-        TableLines = "#33323e",
-        Divider = "#292838",
-        OverlayLight = "#1e1e2d80",
-    };
+        {
+            Primary = "#7e6fff",
+            Surface = "#1e1e2d",
+            Background = "#1a1a27",
+            BackgroundGray = "#151521",
+            AppbarText = "#92929f",
+            AppbarBackground = "rgba(26,26,39,0.8)",
+            DrawerBackground = "#1a1a27",
+            ActionDefault = "#74718e",
+            ActionDisabled = "#9999994d",
+            ActionDisabledBackground = "#605f6d4d",
+            TextPrimary = "#b2b0bf",
+            TextSecondary = "#92929f",
+            TextDisabled = "#ffffff33",
+            DrawerIcon = "#92929f",
+            DrawerText = "#92929f",
+            GrayLight = "#2a2833",
+            GrayLighter = "#1e1e2d",
+            Info = "#4a86ff",
+            Success = "#3dcb6c",
+            Warning = "#ffb545",
+            Error = "#ff3f5f",
+            LinesDefault = "#33323e",
+            TableLines = "#33323e",
+            Divider = "#292838",
+            OverlayLight = "#1e1e2d80",
+        };
 
     public string DarkLightModeButtonIcon => _isDarkMode switch
     {
@@ -101,5 +133,3 @@
         false => Icons.Material.Outlined.DarkMode,
     };
 }
-
-

@@ -1,0 +1,11 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <PackageTags>aspire hosting ollama llm ai</PackageTags>
+    <Description>Ollama support for .NET Aspire.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting" />
+    <PackageReference Include="OllamaSharp" />
+  </ItemGroup>
+</Project>

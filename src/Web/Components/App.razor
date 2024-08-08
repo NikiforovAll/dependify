@@ -39,6 +39,26 @@
 
             await drawDiagram();
         };
+        // this doesn't work
+        @* window.rerenderMermaidDiagram = async () => {
+            let element = document.querySelector('.mermaid:not(:has(svg))');
+
+            if (!element) {
+                return;
+            }
+
+            let graphDefinition = element.innerHTML;
+            graphDefinition = graphDefinition.replace(/&gt;/g, '>').replace(/&lt;/g, '<');
+
+            const { svg } = await mermaid.render('graphDiv', graphDefinition);
+            element.innerHTML = svg;
+        }; *@
+    </script>
+    <script>
+        window.ScrollToBottom = (elementName) => {
+            element = document.getElementById(elementName);
+            element.scrollTop = element.scrollHeight - element.clientHeight;
+        }
     </script>
 </body>
 

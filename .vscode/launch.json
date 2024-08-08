@@ -19,7 +19,16 @@
       "request": "launch",
       "preLaunchTask": "build",
       "program": "${workspaceFolder}/src/Dependify.Cli/bin/Debug/net8.0/Dependify.Cli.dll",
-      "args": ["serve", "C:\\Users\\Oleksii_Nikiforov\\dev\\dependify\\samples\\aspire-project"],
+      "args": [
+        "serve",
+        "C:\\Users\\Oleksii_Nikiforov\\dev\\dependify\\samples\\aspire-project",
+        "--endpoint",
+        "http://localhost:60759/",
+        "--model-id",
+        "phi3:mini",
+        "--api-key",
+        "apiKey"
+      ],
       "cwd": "${workspaceFolder}",
       "stopAtEntry": false,
       "console": "externalTerminal",
