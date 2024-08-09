@@ -8,11 +8,17 @@
 
 Dependify is a tool to visualize dependencies in your .NET application. You can start dependify in `serve` mode to visualize dependencies in a browser or use the `CLI` if you prefer the terminal.
 
+
 | Package                     | Version                                                                                                                      | Description    |
 | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | -------------- |
 | `Dependify.Cli`             | [![Nuget](https://img.shields.io/nuget/v/Dependify.Cli.svg)](https://nuget.org/packages/Dependify.Cli)                       | CLI            |
 | `Dependify.Core`            | [![Nuget](https://img.shields.io/nuget/v/Dependify.Core.svg)](https://nuget.org/packages/Dependify.Core)                     | Core library   |
 | `Dependify.Aspire.Hosting` | [![Nuget](https://img.shields.io/nuget/v/Dependify.Aspire.Hosting.svg)](https://nuget.org/packages/Dependify.Aspire.Hosting) | Aspire support |
+
+Blogs:
+
+* [Explore .NET application dependencies by using Dependify tool](https://nikiforovall.github.io/dotnet/2024/08/03/dependify.html)
+* [Supercharge your Dependify tool with AI chat assistant](https://nikiforovall.github.io/dotnet/2024/08/09/dependify-ai.html)
 
 ## Install
 
@@ -68,6 +74,10 @@ Dependency Explorer allows you to select the dependencies you want to see.
 </video>
 
 Chat (AI) allows you to ask questions about the dependencies.
+
+![serve-graph-view](./assets/ai-chat.png)
+
+Here is how to run the Dependify with the OpenAI GPT-4 model.
 
 ```bash
 dependify serve $dev/cap-aspire/ \

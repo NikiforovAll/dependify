@@ -11,7 +11,7 @@ builder.AddProject<Projects.aspire_project_Web>("webfrontend").WithExternalHttpE
 
 var dependify = builder.AddDependify().ServeFrom("../../../");
 
-if (useLocalModelParam.Resource.Value.ToString().Equals("true", StringComparison.OrdinalIgnoreCase))
+if (useLocalModelParam.Resource.Value.Equals("true", StringComparison.OrdinalIgnoreCase))
 {
     var modelName = "phi3:mini";
     var ollama = builder.AddOllama("ollama").WithDataVolume().AddModel(modelName).WithOpenWebUI();
@@ -26,9 +26,9 @@ else
     // dotnet user-secrets set "Parameters:endpoint" "<endpoint>"
 
     dependify.WithAzureOpenAI(
-        endpointParam.Resource.Value.ToString(),
-        deploymentNameParam.Resource.Value.ToString(),
-        apiKeyParam.Resource.Value.ToString()
+        endpointParam.Resource.Value,
+        deploymentNameParam.Resource.Value,
+        apiKeyParam.Resource.Value
     );
 }
 
