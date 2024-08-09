@@ -26,23 +26,6 @@ Blogs:
 dotnet tool install -g Dependify.Cli
 ```
 
-```bash
-❯ dependify -h
-USAGE:
-    Dependify.Cli.dll [OPTIONS] <COMMAND>
-
-EXAMPLES:
-    Dependify.Cli.dll graph scan ./path/to/folder --framework net8
-    Dependify.Cli.dll graph show ./path/to/project --framework net8
-
-OPTIONS:
-    -h, --help    Prints help information
-
-COMMANDS:
-    graph
-    serve <path>
-```
-
 ## Usage
 
 ```bash
