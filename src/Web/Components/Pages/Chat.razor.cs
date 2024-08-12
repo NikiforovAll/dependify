@@ -6,6 +6,8 @@ using Markdig;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.ChatCompletion;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 using MudBlazor;
 
 public partial class Chat
@@ -21,7 +23,20 @@ public partial class Chat
 
     private string? selectedSolution;
 
+    private Kernel? Kernel { get; set; }
+
+    private IChatCompletionService? chatCompletionService;
+
     private MarkdownPipeline pipeline = new MarkdownPipelineBuilder().UseDiagrams().Build();
+
+    private static readonly OpenAIPromptExecutionSettings ExecutionSettings =
+        new()
+        {
+            FrequencyPenalty = 0,
+            PresencePenalty = 0,
+            Temperature = 1.0,
+            TopP = 0.8,
+        };
 
     protected override Task OnInitializedAsync()
     {
@@ -29,7 +44,73 @@ public partial class Chat
 
         this.selectedSolution = this.SolutionRegistry.Solutions.FirstOrDefault()?.Id;
 
+        this.InitAssistant();
+
         return Task.CompletedTask;
+    }
+
+    private void InitAssistant()
+    {
+        if (!this.OpenAIOptions.Value.IsEnabled)
+        {
+            return;
+        }
+        this.Kernel = this.ServiceProvider.GetRequiredService<Kernel>();
+        this.chatCompletionService = this.Kernel.Services.GetRequiredService<IChatCompletionService>();
+    }
+
+    private ChatHistory CalculateChatHistory(string diagramContent)
+    {
+        var persona = $"""
+            You are .NET expert (aka Dependify expert) that answers user's questions regarding project and it's dependencies.
+
+            Constraints:
+            - You can only use the information from the diagram.
+            - Instead of mentioning the diagram in your answer, use the "source"
+            - Use the diagram as source of knowledge.
+            - When user asks for a project or a package, find the best match use it even if it is misspelled or abbreviated. If you don't find a match, ask the user to provide more information.
+            - When referring to a project or package, use full name of the project as it is in the diagram
+            - Short answers are preferred
+            - Generate answer in Markdown format
+            - Always provide a short version mermaidjs diagram to prove your answer. The mermaid diagram is enclosed in ```mermaid ``` markdown code block.
+            - Be concise and focus on the question.
+
+            - Dependencies are unidirectional, when calculating the dependency only use direct dependencies:
+                For example:
+                A.csproj --> B.csproj
+                Means that:
+                    - A.csproj "uses" or "depends on" or "has a dependency on" B.csproj
+
+                For example:
+                A.csproj --> PackageB
+                Means that:
+                    - A.csproj "uses" or "depends on" or "has a dependency on" PackageB
+
+            ---
+            Diagram: {diagramContent}
+            ---
+            Task: Give an answer to the user question
+            """;
+        var chatHistory = new ChatHistory(persona);
+
+        foreach (var message in this.messages)
+        {
+            if (message is null || string.IsNullOrWhiteSpace(message.Message))
+            {
+                continue;
+            }
+
+            if (message.Role == ChatRole.User)
+            {
+                chatHistory.AddUserMessage(message.Message);
+            }
+            else if (message.Role == ChatRole.Assistant)
+            {
+                chatHistory.AddAssistantMessage(message.Message);
+            }
+        }
+
+        return chatHistory;
     }
 
     [JSInvokable]
@@ -38,15 +119,6 @@ public partial class Chat
         if (!string.IsNullOrWhiteSpace(this.CurrentMessage) || !string.IsNullOrWhiteSpace(input))
         {
             var message = string.IsNullOrWhiteSpace(input) ? this.CurrentMessage : input;
-
-            this.messages.Add(
-                new ChatMessage
-                {
-                    Message = message,
-                    CreatedDate = DateTime.Now,
-                    Role = ChatRole.User
-                }
-            );
 
             if (!this.OpenAIOptions.Value.IsEnabled)
             {
@@ -61,40 +133,24 @@ public partial class Chat
                     return;
                 }
 
+                this.messages.Add(
+                    new ChatMessage
+                    {
+                        Message = message,
+                        CreatedDate = DateTime.Now,
+                        Role = ChatRole.User
+                    }
+                );
+
                 var diagramContent = this.CalculateCurrentContext();
-                var prompt = $"""
-                    You are .NET expert (aka Dependify expert) that will assist a user to answer his question regarding project and it's dependencies.
 
-                    For example:
-                    A.csproj --> B.csproj
+                var chatHistory = this.CalculateChatHistory(diagramContent);
 
-                    Means that: A.csproj "uses" or "depends on" B.csproj
-
-                    For example:
-                    A.csproj --> PackageB
-
-                    Means that: A.csproj "uses" or "depends on" PackageB
-
-                    Constraints:
-                    - You can only use the information from the diagram.
-                    - Instead of mentioning the diagram in your answer, use the "source"
-                    - Use the diagram as source of knowledge.
-                    - When user asks for a project or a package, find the best match use it even if it is misspelled or abbreviated. If you don't find a match, ask the user to provide more information.
-                    - When referring to a project or package, use full name of the project as it is in the diagram
-                    - Short answers are preferred
-                    - Generate answer in Markdown format
-                    - If the question is about dependencies, provide a short version mermaidjs diagram to prove your answer. The mermaid diagram is enclosed in ```mermaid ``` markdown code block.
-                    - Be concise and focus on the question.
-                    - If you found something that could be improved - suggest it. Add "💡Tip:" followed by the suggestion.
-                    - Don't ask for more information, just answer the question.
-
-                    Task:
-                    Give a answer to the question: "{message}"
-                    ---
-                    Diagram: {diagramContent}
-                    """;
-
-                var resultTask = this.ServiceProvider.GetRequiredService<Kernel>().InvokePromptAsync(prompt);
+                var resultTask = this.chatCompletionService!.GetChatMessageContentAsync(
+                    chatHistory,
+                    ExecutionSettings,
+                    this.Kernel
+                );
 
                 var delayTask = Task.Delay(TimeSpan.FromSeconds(3));
 
@@ -117,6 +173,7 @@ public partial class Chat
 
                     await this.InvokeAsync(this.StateHasChanged);
                 }
+
                 try
                 {
                     await resultTask;
@@ -173,7 +230,7 @@ public partial class Chat
         this.messages.Add(
             new ChatMessage
             {
-                Message = "export DEPENDIFY__AI__ENDPOINT=\"https:/<endpoint>.openai.azure.com\"",
+                Message = "export DEPENDIFY__AI__ENDPOINT=\"https://api.openai.azure.com\"",
                 CreatedDate = DateTime.Now,
                 Role = ChatRole.DisplayOnly
             }
