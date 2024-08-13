@@ -142,7 +142,7 @@ public partial class Chat
                     }
                 );
 
-                var diagramContent = this.CalculateCurrentContext();
+                var diagramContent = this.CalculateCurrentContext(noStyles: true);
 
                 var chatHistory = this.CalculateChatHistory(diagramContent);
 
@@ -272,7 +272,7 @@ public partial class Chat
 
             return;
         }
-        var diagramContent = this.CalculateCurrentContext();
+        var diagramContent = this.CalculateCurrentContext(noStyles: false);
 
         var parameters = new DialogParameters { ["DiagramContent"] = diagramContent };
         var options = new DialogOptions
@@ -289,13 +289,13 @@ public partial class Chat
         await dialog.Result;
     }
 
-    private string CalculateCurrentContext()
+    private string CalculateCurrentContext(bool noStyles)
     {
         var solution = this.solutionNodes.Find(n => n.Id == this.selectedSolution);
 
         if (solution is not null && this.SolutionRegistry.GetGraph(solution) is var graph && graph is not null)
         {
-            var content = MermaidSerializer.ToString(graph);
+            var content = MermaidSerializer.ToString(graph, new MermaidSerializerOptions(NoStyle: noStyles));
 
             return content;
         }

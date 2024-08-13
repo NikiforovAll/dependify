@@ -3,7 +3,7 @@ namespace Dependify.Core.Serializers;
 using System.CodeDom.Compiler;
 using Dependify.Core.Graph;
 
-public record MermaidSerializerOptions(bool ShowPackages = true, string Orientation = "LR")
+public record MermaidSerializerOptions(bool ShowPackages = true, string Orientation = "LR", bool NoStyle = false)
 {
     public static MermaidSerializerOptions Empty => new();
 }
@@ -48,13 +48,23 @@ public static class MermaidSerializer
             writer.WriteLine("end");
         }
 
+        var edgeIndex = 0;
         foreach (var reference in graph.Edges)
         {
             writer.WriteLine($"{reference.Start.Id} --> {reference.End.Id}");
+
+            if (!options.NoStyle && reference.End.Type == NodeConstants.Package)
+            {
+                writer.WriteLine($"linkStyle {edgeIndex} stroke:#1976D2,stroke-width:1px;");
+            }
+            edgeIndex++;
         }
 
-        writer.WriteLine($"classDef project fill:{ProjectBackgroundColor};");
-        writer.WriteLine($"classDef package fill:{PackageBackgroundColor};");
+        if (!options.NoStyle)
+        {
+            writer.WriteLine($"classDef project fill:{ProjectBackgroundColor};");
+            writer.WriteLine($"classDef package fill:{PackageBackgroundColor};");
+        }
 
         writer.Indent--;
 

@@ -156,7 +156,6 @@ public class MsBuildService : IDisposable
                     reference.Key,
                     reference.Value.FirstOrDefault(a => a.Key is "Version").Value
                 );
-                builder.WithNode(referenceNode);
                 builder.WithEdge(new Edge(projectNode, referenceNode));
             }
         }
