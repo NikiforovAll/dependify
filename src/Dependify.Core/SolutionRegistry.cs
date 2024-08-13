@@ -54,7 +54,7 @@ public class SolutionRegistry
 
     public Task LoadSolutionsAsync(MsBuildConfig msBuildConfig, CancellationToken cancellationToken = default)
     {
-        this.IsLoaded = false;
+        this.ResetCache();
 
         lock (LockObject)
         {
@@ -69,7 +69,7 @@ public class SolutionRegistry
                         this.Nodes.OfType<ProjectReferenceNode>().ToList(),
                         msBuildConfig
                     )
-                    : this.buildService.AnalyzeReferences(solution, msBuildConfig);
+                    : this.buildService.AnalyzeReferencesWithCache(solution, msBuildConfig, this.GetFullGraph());
 
                 this.solutionGraphs[solution] = dependencyGraph;
 
@@ -127,6 +127,12 @@ public class SolutionRegistry
         }
 
         return builder.Build();
+    }
+
+    private void ResetCache()
+    {
+        this.IsLoaded = false;
+        this.solutionGraphs.Clear();
     }
 }
 
