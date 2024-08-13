@@ -4,7 +4,7 @@ using Dependify.Core;
 
 public sealed record SolutionReferenceNode : Node
 {
-    public bool IsEmpty => this.Id == "<default>";
+    public bool IsEmpty => this.Id == "$default.sln";
 
     public SolutionReferenceNode(string? path = default)
     {
@@ -17,7 +17,7 @@ public sealed record SolutionReferenceNode : Node
         }
         else
         {
-            this.Id = "<default>";
+            this.Id = "$default.sln";
         }
     }
 
