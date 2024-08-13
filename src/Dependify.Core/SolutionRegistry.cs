@@ -18,6 +18,14 @@ public class SolutionRegistry
 
     public IList<SolutionReferenceNode> Solutions { get; private set; } = [];
     public IList<Node> Nodes { get; private set; }
+
+    public IReadOnlyCollection<Node> ProjectsAndSolutions =>
+        this.GetFullGraph()
+            .Nodes.Where(n =>
+                (n.Type == NodeConstants.Solution || n.Type == NodeConstants.Project)
+                && n is not SolutionReferenceNode { IsEmpty: true }
+            )
+            .ToList();
     public bool IsLoaded { get; private set; }
 
     public SolutionRegistry(FileProviderProjectLocator projectLocator, MsBuildService buildService)
@@ -107,20 +115,9 @@ public class SolutionRegistry
 
         foreach (var (solution, graph) in this.solutionGraphs)
         {
-            var solutionNode = new SolutionReferenceNode(solution.Path);
-
-            builder.WithNode(solutionNode);
-
             foreach (var node in graph.Nodes)
             {
-                if (node.Type == NodeConstants.Solution)
-                {
-                    continue;
-                }
-
                 builder.WithNode(node);
-
-                builder.WithEdge(new Edge(solutionNode, node));
 
                 foreach (var edgeNode in graph.FindDescendants(node))
                 {

@@ -51,7 +51,7 @@ public partial class DependencyExplorer
 
     private void FullLoadRegistry()
     {
-        this.NodeIds = this.SolutionRegistry.Nodes.Select(n => n.Id).ToHashSet();
+        this.NodeIds = this.SolutionRegistry.ProjectsAndSolutions.Select(n => n.Id).ToHashSet();
     }
 
     private async Task ToggleIncludeAsync(string nodeId)
