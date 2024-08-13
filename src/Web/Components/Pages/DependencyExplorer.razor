@@ -13,6 +13,12 @@
 <MudToolBar>
     <MudText Typo="Typo.h4">Explorer 🔎</MudText>
     <MudSpacer />
+    <MudSwitch Size="Size.Medium" T="bool" ValueChanged="@(value => OnPackagesIncludedChangedAsync(value))"
+        ThumbIcon="@(PackagesIncluded==true ? Icons.Material.Filled.Done : Icons.Material.Filled.Close)"
+        ThumbIconColor="@(PackagesIncluded==true ? Color.Success : Color.Error)">
+        <MudText Typo="Typo.subtitle2">Packages</MudText>
+    </MudSwitch>
+
     <MudTooltip Text="Unselect All">
         <MudIconButton Icon="@Icons.Material.Outlined.CleaningServices" Size="Size.Medium" Color="Color.Primary"
             OnClick="@UnselectAll" />
@@ -30,7 +36,8 @@
             <MudChip T="string" Color="@(SelectedNodeIds.Contains(nodeId) ? Color.Primary : Color.Default)"
                 OnClick="@(async () => await ToggleIncludeAsync(nodeId))"
                 Size="@(NodeIds.Count > 10 ? Size.Medium : Size.Large)" CloseIcon="@Icons.Material.Rounded.LibraryAdd"
-                OnClose="@(async () => await IncludeDependencies(nodeId))" Variant="@(nodeId.EndsWith(".sln") ?   Variant.Outlined : Variant.Text)">
+                OnClose="@(async () => await IncludeDependencies(nodeId))"
+                Variant="@(nodeId.EndsWith(".sln") ?   Variant.Outlined : Variant.Text)">
                 @nodeId
             </MudChip>
         }

@@ -8,6 +8,7 @@ using MudBlazor;
 
 public partial class DependencyExplorer
 {
+    private bool PackagesIncluded { get; set; }
     private bool Loaded { get; set; }
 
     private HashSet<string> NodeIds { get; set; } = [];
@@ -105,11 +106,28 @@ public partial class DependencyExplorer
         this.DiagramContent = MermaidSerializer.ToString(subGraph);
     }
 
+    private async Task OnPackagesIncludedChangedAsync(bool value)
+    {
+        this.PackagesIncluded = value;
+        this.RefreshDiagram();
+
+        await this.JSRuntime.InvokeVoidAsync("redrawMermaidDiagram", this.DiagramContent);
+        await this.InvokeAsync(this.StateHasChanged);
+    }
+
     private DependencyGraph? GetSubGraph(HashSet<string> nodeIds)
     {
         var graph = this.SolutionRegistry.GetFullGraph();
 
-        var subGraph = graph.SubGraph(n => nodeIds.Contains(n.Id));
+        var subGraph = graph.SubGraph(n =>
+        {
+            var isPackageIncluded =
+                this.PackagesIncluded
+                && n.Type == NodeConstants.Package
+                && graph.FindAscendants(n).Any(n2 => nodeIds.Contains(n2.Id));
+
+            return nodeIds.Contains(n.Id) || isPackageIncluded;
+        });
 
         return subGraph;
     }
