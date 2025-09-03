@@ -91,7 +91,8 @@ internal sealed class ServeCommand() : AsyncCommand<ServeCommandSettings>
                 builder.Services.AddHostedService(sp => new SolutionRegistryService(
                     sp.GetRequiredService<SolutionRegistry>(),
                     sp.GetRequiredService<IOptions<MsBuildConfig>>(),
-                    isLoggingEnabled
+                    isLoggingEnabled,
+                    settings
                 ));
 
                 builder.Services.Configure<MsBuildConfig>(config =>
@@ -166,7 +167,8 @@ internal sealed class ServeCommandSettings : BaseAnalyzeCommandSettings
 internal sealed class SolutionRegistryService(
     SolutionRegistry solutionRegistry,
     IOptions<MsBuildConfig> msBuildConfig,
-    bool isLoggingEnabled
+    bool isLoggingEnabled,
+    ServeCommandSettings settings
 ) : BackgroundService
 {
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
@@ -177,7 +179,7 @@ internal sealed class SolutionRegistryService(
                 {
                     if (!isLoggingEnabled)
                     {
-                        solutionRegistry.OnLoadingEvents.SubscribeToLoadingEvents(default!);
+                        solutionRegistry.OnLoadingEvents.SubscribeToLoadingEvents(default!, settings);
                     }
 
                     solutionRegistry.LoadRegistry();

@@ -42,7 +42,7 @@ internal sealed class ScanCommand(
         var graph = Cli.Utils.DoSomeWork(
             ctx =>
             {
-                msBuildService.OnLoadingEvents.SubscribeToLoadingEvents(ctx);
+                msBuildService.OnLoadingEvents.SubscribeToLoadingEvents(ctx, settings);
 
                 return msBuildService.AnalyzeReferences(
                     nodes.OfType<ProjectReferenceNode>(),
@@ -79,7 +79,7 @@ internal sealed class ScanCommand(
             var graph = Cli.Utils.DoSomeWork(
                 ctx =>
                 {
-                    msBuildService.OnLoadingEvents.SubscribeToLoadingEvents(ctx);
+                    msBuildService.OnLoadingEvents.SubscribeToLoadingEvents(ctx, settings);
 
                     return msBuildService.AnalyzeReferences(
                         solution,
@@ -133,7 +133,7 @@ internal sealed class ScanCommand(
                     NodeConstants.Project => "[aquamarine3]Project[/]",
                     NodeConstants.Solution => "[red3]Solution[/]",
                     NodeConstants.Package => "[skyblue1]Package[/]",
-                    _ => "Unknown"
+                    _ => "Unknown",
                 };
 
                 var packagesCountLabel = settings.IncludePackages!.Value
