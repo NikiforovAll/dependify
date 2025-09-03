@@ -3,21 +3,19 @@ namespace Dependify.Cli.Formatters;
 using Dependify.Core.Graph;
 using Dependify.Core.Serializers;
 
-internal class JsonOutputFormatter(TextWriter textWriter) : IOutputFormatter
+internal sealed class JsonOutputFormatter(TextWriter textWriter) : IOutputFormatter
 {
     public void Dispose() => textWriter.Dispose();
 
     public void Write<T>(T data)
     {
-        var graph = data as DependencyGraph;
-
-        if (graph is null)
+        if (data is not DependencyGraph)
         {
             textWriter.WriteLine(JsonGraphSerializer.Serialize(data));
         }
-        else
+        else if (data is DependencyGraph graph)
         {
-            textWriter.WriteLine(JsonGraphSerializer.ToString(data as DependencyGraph));
+            textWriter.WriteLine(JsonGraphSerializer.ToString(graph));
         }
 
         textWriter.Flush();

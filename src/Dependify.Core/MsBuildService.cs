@@ -29,7 +29,7 @@ public class MsBuildService : IDisposable
 
         var analyzerManager = new AnalyzerManager(
             solution.Path,
-            new AnalyzerManagerOptions { LoggerFactory = this.loggerFactory, }
+            new AnalyzerManagerOptions { LoggerFactory = this.loggerFactory }
         );
 
         var builder = new DependencyGraph.Builder(solution);
@@ -87,13 +87,16 @@ public class MsBuildService : IDisposable
         MsBuildConfig config
     )
     {
+#pragma warning disable CA1851 // Possible multiple enumerations of 'IEnumerable' collection
         if (!nodes.Any())
         {
             return;
         }
+#pragma warning restore CA1851 // Possible multiple enumerations of 'IEnumerable' collection
 
-        var analyzerManager = new AnalyzerManager(new AnalyzerManagerOptions { LoggerFactory = this.loggerFactory, });
+        var analyzerManager = new AnalyzerManager(new AnalyzerManagerOptions { LoggerFactory = this.loggerFactory });
 
+#pragma warning disable CA1851 // Possible multiple enumerations of 'IEnumerable' collection
         foreach (var path in nodes.Select(n => n.Path))
         {
             var projectNode = new ProjectReferenceNode(path);
@@ -101,13 +104,14 @@ public class MsBuildService : IDisposable
 
             this.AddDependenciesToGraph(builder, project, projectNode, config);
         }
+#pragma warning restore CA1851 // Possible multiple enumerations of 'IEnumerable' collection
 
         if (config.FullScan)
         {
             List<ProjectReferenceNode> nodesToScan;
             do
             {
-                nodesToScan = builder.GetNotScannedNodes().OfType<ProjectReferenceNode>().ToList();
+                nodesToScan = [.. builder.GetNotScannedNodes().OfType<ProjectReferenceNode>()];
 
                 this.AnalyzeReferencesCore(builder, nodesToScan, config);
             } while (nodesToScan.Count > 0);
@@ -163,7 +167,17 @@ public class MsBuildService : IDisposable
 
     public void Dispose()
     {
-        this.subject.OnCompleted();
+        this.Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            this.subject.OnCompleted();
+            this.subject.Dispose();
+        }
     }
 }
 
@@ -183,7 +197,7 @@ public enum NodeEventType
     SolutionLoading,
     SolutionLoaded,
     RegistryLoaded,
-    Other
+    Other,
 }
 
 public record MsBuildConfig

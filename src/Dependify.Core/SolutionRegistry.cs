@@ -4,15 +4,19 @@ using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Dependify.Core.Graph;
 
+#pragma warning disable CA1001 // Types that own disposable fields should be disposable
 public class SolutionRegistry
+#pragma warning restore CA1001 // Types that own disposable fields should be disposable
 {
     private readonly Dictionary<SolutionReferenceNode, DependencyGraph> solutionGraphs = [];
-    private static readonly object LockObject = new();
+    private static readonly Lock LockObject = new();
 
     private readonly FileProviderProjectLocator projectLocator;
     private readonly MsBuildService buildService;
 
+#pragma warning disable CA2213 // Disposable fields should be disposed
     private readonly Subject<NodeEvent> subject;
+#pragma warning restore CA2213 // Disposable fields should be disposed
     public IObservable<NodeEvent> OnLoadingEvents { get; }
     public IObservable<double> OnProgress { get; }
 
@@ -20,27 +24,32 @@ public class SolutionRegistry
     public IList<Node> Nodes { get; private set; }
 
     public IReadOnlyCollection<Node> ProjectsAndSolutions =>
-        this.GetFullGraph()
-            .Nodes.Where(n =>
-                (n.Type == NodeConstants.Solution || n.Type == NodeConstants.Project)
-                && n is not SolutionReferenceNode { IsEmpty: true }
-            )
-            .ToList();
+        [
+            .. this.GetFullGraph()
+                .Nodes.Where(n =>
+                    (n.Type == NodeConstants.Solution || n.Type == NodeConstants.Project)
+                    && n is not SolutionReferenceNode { IsEmpty: true }
+                ),
+        ];
     public bool IsLoaded { get; private set; }
 
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
     public SolutionRegistry(FileProviderProjectLocator projectLocator, MsBuildService buildService)
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
     {
         this.projectLocator = projectLocator;
         this.buildService = buildService;
         this.subject = new Subject<NodeEvent>();
         this.OnLoadingEvents = buildService.OnLoadingEvents.Merge(this.subject);
+
+        this.LoadRegistry();
     }
 
     public void LoadRegistry()
     {
         var nodes = this.projectLocator.FullScan().ToList();
 
-        this.Solutions = nodes.OfType<SolutionReferenceNode>().ToList();
+        this.Solutions = [.. nodes.OfType<SolutionReferenceNode>()];
 
         if (this.Solutions.Count == 0)
         {
@@ -78,7 +87,7 @@ public class SolutionRegistry
                     this.subject.OnNext(
                         new NodeEvent(NodeEventType.RegistryLoaded, string.Empty, string.Empty)
                         {
-                            Message = "All solutions loaded"
+                            Message = "All solutions loaded",
                         }
                     );
                 }

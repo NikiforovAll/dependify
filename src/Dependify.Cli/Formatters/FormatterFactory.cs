@@ -2,11 +2,13 @@ namespace Dependify.Cli.Formatters;
 
 using Dependify.Cli.Commands.Settings;
 
-internal class FormatterFactory
+internal sealed class FormatterFactory
 {
     public IOutputFormatter Create(GlobalCommandSettings settings)
     {
+#pragma warning disable CA2000 // Dispose objects before losing scope
         var writer = SelectOutputWriter(settings);
+#pragma warning restore CA2000 // Dispose objects before losing scope
 
         return settings.Format switch
         {

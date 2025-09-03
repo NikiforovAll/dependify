@@ -8,6 +8,7 @@ using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Lifecycle;
 using Microsoft.Extensions.Logging;
 using OllamaSharp;
+using OllamaSharp.Models;
 
 internal sealed class OllamaLifecycleHook(
     ResourceLoggerService loggerService,
@@ -72,7 +73,7 @@ internal sealed class OllamaLifecycleHook(
 
                         // retrieve the list of models available in the ollama server
                         var modelsAvailable = await ollamaClient
-                            .ListLocalModels(cancellationToken)
+                            .ListLocalModelsAsync(cancellationToken)
                             .ConfigureAwait(false);
                         var availableModelNames = modelsAvailable.Select(m => m.Name) ?? [];
 
@@ -159,32 +160,26 @@ internal sealed class OllamaLifecycleHook(
 
         long percentage = 0;
 
-        await ollamaClient
-            .PullModel(
-                model,
-                async status =>
+        await foreach (var response in ollamaClient.PullModelAsync(new PullModelRequest { Model = model }, cancellationToken))
+        {
+            if (response?.Total != 0 && response?.Total != null && response?.Completed != null)
+            {
+                var newPercentage = (long)(response.Completed / (double)response.Total * 100);
+                if (newPercentage != percentage)
                 {
-                    if (status.Total != 0)
-                    {
-                        var newPercentage = (long)(status.Completed / (double)status.Total * 100);
-                        if (newPercentage != percentage)
-                        {
-                            percentage = newPercentage;
+                    percentage = newPercentage;
 
-                            var percentageState =
-                                percentage == 0 ? "Downloading model" : $"Downloading ({model}) {percentage}%";
-                            await notificationService
-                                .PublishUpdateAsync(
-                                    resource,
-                                    state => state with { State = new(percentageState, KnownResourceStateStyles.Info) }
-                                )
-                                .ConfigureAwait(false);
-                        }
-                    }
-                },
-                cancellationToken
-            )
-            .ConfigureAwait(false);
+                    var percentageState =
+                        percentage == 0 ? "Downloading model" : $"Downloading ({model}) {percentage}%";
+                    await notificationService
+                        .PublishUpdateAsync(
+                            resource,
+                            state => state with { State = new(percentageState, KnownResourceStateStyles.Info) }
+                        )
+                        .ConfigureAwait(false);
+                }
+            }
+        }
 
         logger.LogInformation(
             "{TimeStamp}: Finished pulling ollama model {Model}",
@@ -193,10 +188,9 @@ internal sealed class OllamaLifecycleHook(
         );
     }
 
-    public ValueTask DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
-        this.cancellationTokenSource.Cancel();
-
-        return default;
+        await this.cancellationTokenSource.CancelAsync();
+        this.cancellationTokenSource.Dispose();
     }
 }

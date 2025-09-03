@@ -1,7 +1,7 @@
 @inject IJSRuntime JSRuntime
 
 @code {
-    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
+    [CascadingParameter] IDialogReference MudDialog { get; set; } = default!;
     [Parameter] public string DiagramContent { get; set; } = default!;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

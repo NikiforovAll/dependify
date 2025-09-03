@@ -7,7 +7,7 @@ using Dependify.Core;
 using Dependify.Core.Graph;
 using Microsoft.Extensions.Logging;
 
-internal class ShowCommand(
+internal sealed class ShowCommand(
     ProjectLocator projectLocator,
     MsBuildService msBuildService,
     FormatterFactory formatterFactory,
@@ -252,7 +252,7 @@ internal class ShowCommand(
     }
 }
 
-internal class ShowCommandSettings : BaseAnalyzeCommandSettings
+internal sealed class ShowCommandSettings : BaseAnalyzeCommandSettings
 {
     [Description("The visualization style.")]
     [CommandOption("--display")]

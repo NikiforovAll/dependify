@@ -477,3 +477,6 @@ dotnet_diagnostic.IDE0022.severity = silent
 
 # CA1822: Mark members as static
 dotnet_diagnostic.CA1822.severity = suggestion
+
+# CA1515: Consider making public types internal
+dotnet_diagnostic.CA1515.severity = suggestion

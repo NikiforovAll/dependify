@@ -3,7 +3,7 @@ namespace Dependify.Cli.Formatters;
 using Dependify.Core.Graph;
 using Dependify.Core.Serializers;
 
-internal class DotOutputFormatter(TextWriter textWriter) : IOutputFormatter
+internal sealed class DotOutputFormatter(TextWriter textWriter) : IOutputFormatter
 {
     private bool disposed;
 
@@ -11,11 +11,13 @@ internal class DotOutputFormatter(TextWriter textWriter) : IOutputFormatter
     {
         ObjectDisposedException.ThrowIf(this.disposed, textWriter);
 
-        textWriter.WriteLine(GraphvizSerializer.ToString(data as DependencyGraph));
+        textWriter.WriteLine(
+            GraphvizSerializer.ToString(data as DependencyGraph ?? throw new ArgumentException("Invalid data type"))
+        );
         textWriter.Flush();
     }
 
-    protected virtual void Dispose(bool disposing)
+    private void Dispose(bool disposing)
     {
         if (!this.disposed)
         {

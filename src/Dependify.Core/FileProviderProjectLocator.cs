@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 public class FileProviderProjectLocator(IFileProvider fileProvider, ILogger<ProjectLocator> logger)
 {
     private const string SolutionFileExtension = ".sln";
+    private const string XmlSolutionFileExtension = ".slnx";
     private const string ProjectFileExtension = ".csproj";
 
     public string Root =>
@@ -39,7 +40,8 @@ public class FileProviderProjectLocator(IFileProvider fileProvider, ILogger<Proj
             string.Empty,
             f =>
                 f.Name.EndsWith(ProjectFileExtension, StringComparison.OrdinalIgnoreCase)
-                || f.Name.EndsWith(SolutionFileExtension, StringComparison.OrdinalIgnoreCase),
+                || f.Name.EndsWith(SolutionFileExtension, StringComparison.OrdinalIgnoreCase)
+                || f.Name.EndsWith(XmlSolutionFileExtension, StringComparison.OrdinalIgnoreCase),
             maxDepth
         );
 
@@ -49,7 +51,8 @@ public class FileProviderProjectLocator(IFileProvider fileProvider, ILogger<Proj
             {
                 result = result.Append(new ProjectReferenceNode(file.PhysicalPath!));
             }
-            else if (file.Name.EndsWith(SolutionFileExtension, StringComparison.OrdinalIgnoreCase))
+            else if (file.Name.EndsWith(SolutionFileExtension, StringComparison.OrdinalIgnoreCase)
+                || file.Name.EndsWith(XmlSolutionFileExtension, StringComparison.OrdinalIgnoreCase))
             {
                 result = result.Append(new SolutionReferenceNode(file.PhysicalPath));
             }
