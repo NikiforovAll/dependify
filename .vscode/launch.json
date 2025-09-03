@@ -36,7 +36,9 @@
       "program": "${workspaceFolder}/src/Dependify.Cli/bin/Debug/net9.0/Dependify.Cli.dll",
       "args": [
         "serve",
-        "."
+        ".",
+        "-l",
+        "Information"
       ],
       "cwd": "${workspaceFolder}",
       "stopAtEntry": false,

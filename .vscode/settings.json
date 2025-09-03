@@ -1,6 +1,7 @@
 {
   "cSpell.words": [
-    "Dependify"
+    "Dependify",
+    "Ollama"
   ],
   "[csharp]": {
     "editor.defaultFormatter": "csharpier.csharpier-vscode"

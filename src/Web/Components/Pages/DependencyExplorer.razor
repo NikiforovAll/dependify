@@ -37,7 +37,7 @@
                 OnClick="@(async () => await ToggleIncludeAsync(nodeId))"
                 Size="@(NodeIds.Count > 10 ? Size.Medium : Size.Large)" CloseIcon="@Icons.Material.Rounded.LibraryAdd"
                 OnClose="@(async () => await IncludeDependencies(nodeId))"
-                Variant="@(nodeId.EndsWith(".sln") ?   Variant.Outlined : Variant.Text)">
+                Variant="@(nodeId.EndsWith(".sln") || nodeId.EndsWith(".slnx") ? Variant.Outlined : Variant.Text)">
                 @nodeId
             </MudChip>
         }
