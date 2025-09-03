@@ -38,9 +38,7 @@ jobs:
       - name: "Install .NET SDK"
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.0.204
-      - name: Install Aspire workload
-        run: dotnet workload install aspire
+          dotnet-version: 9.0.403
       - name: "Dotnet Tool Restore"
         run: dotnet tool restore
         shell: pwsh
