@@ -6,7 +6,9 @@ using Dependify.Core.Serializers;
 using Microsoft.JSInterop;
 using MudBlazor;
 
+#pragma warning disable CA1515 // Consider making public types internal
 public partial class DependencyExplorer
+#pragma warning restore CA1515 // Consider making public types internal
 {
     private bool PackagesIncluded { get; set; }
     private bool Loaded { get; set; }
@@ -51,16 +53,12 @@ public partial class DependencyExplorer
 
     private void FullLoadRegistry()
     {
-        this.NodeIds = this.SolutionRegistry.ProjectsAndSolutions.Select(n => n.Id).ToHashSet();
+        this.NodeIds = [.. this.SolutionRegistry.ProjectsAndSolutions.Select(n => n.Id)];
     }
 
     private async Task ToggleIncludeAsync(string nodeId)
     {
-        if (this.SelectedNodeIds.Contains(nodeId))
-        {
-            this.SelectedNodeIds.Remove(nodeId);
-        }
-        else
+        if (!this.SelectedNodeIds.Remove(nodeId))
         {
             this.SelectedNodeIds.Add(nodeId);
         }
@@ -73,8 +71,6 @@ public partial class DependencyExplorer
 
     private async Task IncludeDependencies(string nodeId)
     {
-        var includePackages = false;
-
         var graph = this.SolutionRegistry.GetFullGraph();
 
         var node = graph.Nodes.FirstOrDefault(n => n.Id == nodeId);
@@ -103,7 +99,9 @@ public partial class DependencyExplorer
     {
         var subGraph = this.GetSubGraph(this.SelectedNodeIds);
 
-        this.DiagramContent = MermaidSerializer.ToString(subGraph);
+        this.DiagramContent = MermaidSerializer.ToString(
+            subGraph ?? throw new InvalidOperationException("Graph is null")
+        );
     }
 
     private async Task OnPackagesIncludedChangedAsync(bool value)

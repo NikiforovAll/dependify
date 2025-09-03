@@ -7,7 +7,7 @@ using Dependify.Core;
 using Dependify.Core.Graph;
 using Microsoft.Extensions.Logging;
 
-internal class ShowCommand(
+internal sealed class ShowCommand(
     ProjectLocator projectLocator,
     MsBuildService msBuildService,
     FormatterFactory formatterFactory,
@@ -83,7 +83,7 @@ internal class ShowCommand(
         n switch
         {
             ProjectReferenceNode => 0,
-            _ => 1
+            _ => 1,
         };
 
     private static void BuildTree(
@@ -152,7 +152,8 @@ internal class ShowCommand(
         return $"[{SelectColor(depth)}]{node.Path.RemovePrefix(prefix)}[/]";
     }
 
-    private static string SelectColor(int depth) => (
+    private static string SelectColor(int depth) =>
+        (
             depth switch
             {
                 0 => Color.Grey93,
@@ -160,9 +161,11 @@ internal class ShowCommand(
                 2 => Color.Grey70,
                 3 => Color.Grey62,
                 4 => Color.Grey50,
-                _ => Color.Grey42
+                _ => Color.Grey42,
             }
-        ).ToString().ToLowerInvariant();
+        )
+            .ToString()
+            .ToLowerInvariant();
 
     private static Table BuildTable(IEnumerable<Node> nodes, DependencyGraph graph, string prefix, int depth)
     {
@@ -205,7 +208,7 @@ internal class ShowCommand(
             return Cli.Utils.DoSomeWork(
                 ctx =>
                 {
-                    msBuildService.OnLoadingEvents.SubscribeToLoadingEvents(ctx);
+                    msBuildService.OnLoadingEvents.SubscribeToLoadingEvents(ctx, settings);
 
                     return msBuildService.AnalyzeReferences(
                         solution,
@@ -221,7 +224,7 @@ internal class ShowCommand(
             return Cli.Utils.DoSomeWork(
                 ctx =>
                 {
-                    msBuildService.OnLoadingEvents.SubscribeToLoadingEvents(ctx);
+                    msBuildService.OnLoadingEvents.SubscribeToLoadingEvents(ctx, settings);
 
                     return msBuildService.AnalyzeReferences(
                         project,
@@ -252,7 +255,7 @@ internal class ShowCommand(
     }
 }
 
-internal class ShowCommandSettings : BaseAnalyzeCommandSettings
+internal sealed class ShowCommandSettings : BaseAnalyzeCommandSettings
 {
     [Description("The visualization style.")]
     [CommandOption("--display")]
@@ -272,5 +275,5 @@ internal class ShowCommandSettings : BaseAnalyzeCommandSettings
 public enum DependencyDisplayFormat
 {
     Box,
-    Tree
+    Tree,
 }

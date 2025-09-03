@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 public class ProjectLocator(ILogger<ProjectLocator> logger)
 {
     private const string SolutionFileExtension = ".sln";
+    private const string XmlSolutionFileExtension = ".slnx";
     private const string ProjectFileExtension = ".csproj";
 
     /// <summary>
@@ -15,7 +16,7 @@ public class ProjectLocator(ILogger<ProjectLocator> logger)
     /// <returns></returns>
     public IEnumerable<Node> FullScan(string? path)
     {
-        return this.Scan(path, new EnumerationOptions { RecurseSubdirectories = true, });
+        return this.Scan(path, new EnumerationOptions { RecurseSubdirectories = true });
     }
 
     /// <summary>
@@ -38,7 +39,7 @@ public class ProjectLocator(ILogger<ProjectLocator> logger)
             {
                 result = result.Append(new ProjectReferenceNode(path));
             }
-            else if (extension == SolutionFileExtension)
+            else if (extension is SolutionFileExtension or XmlSolutionFileExtension)
             {
                 result = result.Append(new SolutionReferenceNode(path));
             }
@@ -51,6 +52,7 @@ public class ProjectLocator(ILogger<ProjectLocator> logger)
 
             var solutions = Directory
                 .GetFiles(path, $"*{SolutionFileExtension}", enumerationOptions)
+                .Concat(Directory.GetFiles(path, $"*{XmlSolutionFileExtension}", enumerationOptions))
                 .Select<string, Node>(s => new SolutionReferenceNode(s));
 
             result = projects.Concat(solutions);

@@ -2,32 +2,49 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "debug",
+      "name": "scan:cli",
       "type": "coreclr",
       "request": "launch",
       "preLaunchTask": "build",
-      "program": "${workspaceFolder}/src/Dependify.Cli/bin/Debug/net8.0/Dependify.Cli.dll",
-      "args": [],
+      "program": "${workspaceFolder}/src/Dependify.Cli/bin/Debug/net9.0/Dependify.Cli.dll",
+      "args": [
+        "graph",
+        "show",
+        ".",
+        "--format",
+        "json"
+      ],
       "cwd": "${workspaceFolder}",
       "stopAtEntry": false,
       "console": "externalTerminal",
       "env": {}
     },
     {
-      "name": "serve:debug",
+      "name": "serve:debug-samples",
       "type": "coreclr",
       "request": "launch",
       "preLaunchTask": "build",
-      "program": "${workspaceFolder}/src/Dependify.Cli/bin/Debug/net8.0/Dependify.Cli.dll",
+      "program": "${workspaceFolder}/src/Dependify.Cli/bin/Debug/net9.0/Dependify.Cli.dll",
       "args": [
         "serve",
-        "C:\\Users\\Oleksii_Nikiforov\\dev\\dependify\\samples\\aspire-project",
-        "--endpoint",
-        "http://localhost:60759/",
-        "--model-id",
-        "phi3:mini",
-        "--api-key",
-        "apiKey"
+        "./samples/"
+      ],
+      "cwd": "${workspaceFolder}",
+      "stopAtEntry": false,
+      "console": "externalTerminal",
+      "env": {}
+    },
+    {
+      "name": "serve:debug-root",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/src/Dependify.Cli/bin/Debug/net9.0/Dependify.Cli.dll",
+      "args": [
+        "serve",
+        ".",
+        "-l",
+        "Information"
       ],
       "cwd": "${workspaceFolder}",
       "stopAtEntry": false,

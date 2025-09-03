@@ -1,6 +1,5 @@
 namespace Dependify.Cli.Commands;
 
-using System.Reactive.Linq;
 using System.Threading;
 using Dependify.Cli.Commands.Settings;
 using Dependify.Core;
@@ -10,7 +9,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using Web;
 
-internal class ServeCommand() : AsyncCommand<ServeCommandSettings>
+internal sealed class ServeCommand() : AsyncCommand<ServeCommandSettings>
 {
     private const string Port = "9999";
     private const string Host = $"http://localhost:{Port}";
@@ -19,7 +18,7 @@ internal class ServeCommand() : AsyncCommand<ServeCommandSettings>
     {
         var isLoggingEnabled = settings.LogLevel.HasValue && settings.LogLevel.Value != LogLevel.None;
 
-        var directory = Path.GetDirectoryName($"{settings.Path.TrimEnd('/')}/").NormalizePath();
+        var directory = (Path.GetDirectoryName($"{settings.Path.TrimEnd('/')}/") ?? settings.Path).NormalizePath();
 
         if (!Directory.Exists(directory))
         {
@@ -92,7 +91,8 @@ internal class ServeCommand() : AsyncCommand<ServeCommandSettings>
                 builder.Services.AddHostedService(sp => new SolutionRegistryService(
                     sp.GetRequiredService<SolutionRegistry>(),
                     sp.GetRequiredService<IOptions<MsBuildConfig>>(),
-                    isLoggingEnabled
+                    isLoggingEnabled,
+                    settings
                 ));
 
                 builder.Services.Configure<MsBuildConfig>(config =>
@@ -149,7 +149,7 @@ internal class ServeCommand() : AsyncCommand<ServeCommandSettings>
     }
 }
 
-internal class ServeCommandSettings : BaseAnalyzeCommandSettings
+internal sealed class ServeCommandSettings : BaseAnalyzeCommandSettings
 {
     [CommandOption("--endpoint")]
     public string AIEndpoint { get; set; } = default!;
@@ -164,20 +164,22 @@ internal class ServeCommandSettings : BaseAnalyzeCommandSettings
     public string AIApiKey { get; set; } = default!;
 }
 
-internal class SolutionRegistryService(
+internal sealed class SolutionRegistryService(
     SolutionRegistry solutionRegistry,
     IOptions<MsBuildConfig> msBuildConfig,
-    bool isLoggingEnabled
+    bool isLoggingEnabled,
+    ServeCommandSettings settings
 ) : BackgroundService
 {
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
+#pragma warning disable CA2008 // Do not create tasks without passing a TaskScheduler
         Task.Run(
                 () =>
                 {
                     if (!isLoggingEnabled)
                     {
-                        solutionRegistry.OnLoadingEvents.SubscribeToLoadingEvents(default!);
+                        solutionRegistry.OnLoadingEvents.SubscribeToLoadingEvents(default!, settings);
                     }
 
                     solutionRegistry.LoadRegistry();
@@ -191,12 +193,13 @@ internal class SolutionRegistryService(
                     if (!isLoggingEnabled)
                     {
                         AnsiConsole.MarkupLine(
-                            $"{Environment.NewLine}[olive]Loaded[/] [grey]{solutionRegistry.Solutions.Count()}[/] [olive]solutions[/]{Environment.NewLine}"
+                            $"{Environment.NewLine}[olive]Loaded[/] [grey]{solutionRegistry.Solutions.Count}[/] [olive]solutions[/]{Environment.NewLine}"
                         );
                     }
                 },
                 stoppingToken
             );
+#pragma warning restore CA2008 // Do not create tasks without passing a TaskScheduler
 
         return Task.CompletedTask;
     }

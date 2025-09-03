@@ -37,7 +37,11 @@ internal static class Utils
         return func(null);
     }
 
-    public static void SubscribeToLoadingEvents(this IObservable<NodeEvent> observable, StatusContext? ctx) =>
+    public static void SubscribeToLoadingEvents(
+        this IObservable<NodeEvent> observable,
+        StatusContext? ctx,
+        GlobalCommandSettings settings
+    ) =>
         observable.Subscribe(node =>
         {
             switch (node.EventType)
@@ -49,10 +53,16 @@ internal static class Utils
                     ctx?.Status($"[yellow]Loading...[/] [grey]{node.Path}[/]");
                     break;
                 case NodeEventType.ProjectLoaded:
-                    AnsiConsole.MarkupLine($"[green] Loaded: [/] [grey]{node.Path}[/]");
+                    if (settings.Format == OutputFormat.Tui)
+                    {
+                        AnsiConsole.MarkupLine($"[green] Loaded: [/] [grey]{node.Path}[/]");
+                    }
                     break;
                 case NodeEventType.SolutionLoaded:
-                    AnsiConsole.MarkupLine($"[green] Loaded: [/] [grey]{node.Path}[/]");
+                    if (settings.Format == OutputFormat.Tui)
+                    {
+                        AnsiConsole.MarkupLine($"[green] Loaded: [/] [grey]{node.Path}[/]");
+                    }
                     break;
                 default:
                     break;

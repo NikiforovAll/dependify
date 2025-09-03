@@ -8,17 +8,15 @@ using MudBlazor;
 
 public partial class Home
 {
-    private double ProgressValue = 0;
-
     private enum DiagramStyle
     {
         Graph,
-        C4
+        C4,
     }
 
     private List<NodeWithProgress> nodes = [];
 
-    private class NodeWithProgress(Node node, bool loaded)
+    private sealed class NodeWithProgress(Node node, bool loaded)
     {
         public Node Node { get; set; } = node;
         public bool Loaded { get; set; } = loaded;
@@ -53,7 +51,9 @@ public partial class Home
             }
         });
 
+#pragma warning disable CA1849 // Call async methods when in an async method
         this.LoadSolutions();
+#pragma warning restore CA1849 // Call async methods when in an async method
 
         this.selectedSolution = this.SolutionRegistry.Solutions.FirstOrDefault()?.Id;
     }
@@ -62,15 +62,17 @@ public partial class Home
     {
         if (force)
         {
-            this.nodes = this.SolutionRegistry.Nodes.Select(n => new NodeWithProgress(n, false)).ToList();
+            this.nodes = [.. this.SolutionRegistry.Nodes.Select(n => new NodeWithProgress(n, false))];
 
             this.Snackbar.Add($"Re-syncing solutions", Severity.Warning);
 
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
             Task.Run(async () =>
             {
                 await this.SolutionRegistry.LoadSolutionsAsync(this.MsBuildConfig.Value);
-                this.LoadSolutions();
+                this.LoadSolutionsAsync();
             });
+#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
         }
     }
 
@@ -102,7 +104,7 @@ public partial class Home
             this.nodeUsageStatistics =
             [
                 this.SolutionRegistry.GetDependencyCount(solution, solution),
-                .. projectUsageStatistics
+                .. projectUsageStatistics,
             ];
 
             this.displayMode = DisplayMode.Solutions;
@@ -140,7 +142,7 @@ public partial class Home
             CloseOnEscapeKey = true,
         };
 
-        var dialog = this.DialogService.Show<DiagramModal>(subGraph.Root.Id, parameters, options);
+        var dialog = await this.DialogService.ShowAsync<DiagramModal>(subGraph.Root.Id, parameters, options);
 
         await dialog.Result;
     }

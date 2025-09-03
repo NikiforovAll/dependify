@@ -6,7 +6,7 @@ using Dependify.Core;
 using Dependify.Core.Graph;
 using Microsoft.Extensions.Logging;
 
-internal class ScanCommand(
+internal sealed class ScanCommand(
     ProjectLocator projectLocator,
     MsBuildService msBuildService,
     FormatterFactory formatterFactory,
@@ -42,7 +42,7 @@ internal class ScanCommand(
         var graph = Cli.Utils.DoSomeWork(
             ctx =>
             {
-                msBuildService.OnLoadingEvents.SubscribeToLoadingEvents(ctx);
+                msBuildService.OnLoadingEvents.SubscribeToLoadingEvents(ctx, settings);
 
                 return msBuildService.AnalyzeReferences(
                     nodes.OfType<ProjectReferenceNode>(),
@@ -79,7 +79,7 @@ internal class ScanCommand(
             var graph = Cli.Utils.DoSomeWork(
                 ctx =>
                 {
-                    msBuildService.OnLoadingEvents.SubscribeToLoadingEvents(ctx);
+                    msBuildService.OnLoadingEvents.SubscribeToLoadingEvents(ctx, settings);
 
                     return msBuildService.AnalyzeReferences(
                         solution,
@@ -123,26 +123,28 @@ internal class ScanCommand(
             foreach (var node in nodes)
             {
                 var displayPath = node.Path.RemovePrefix(prefix);
-                var descendants = graph.FindDescendants(node);
-                var ascendantsCount = graph.FindAscendants(node).OfType<ProjectReferenceNode>().Count();
+                var descendants = graph.FindDescendants(node).ToArray();
+                var projectDescendants = descendants.OfType<ProjectReferenceNode>().ToList();
+                var packageDescendants = descendants.OfType<PackageReferenceNode>().ToList();
+                var projectAscendants = graph.FindAscendants(node).OfType<ProjectReferenceNode>().ToList();
 
                 var type = node.Type switch
                 {
                     NodeConstants.Project => "[aquamarine3]Project[/]",
                     NodeConstants.Solution => "[red3]Solution[/]",
                     NodeConstants.Package => "[skyblue1]Package[/]",
-                    _ => "Unknown"
+                    _ => "Unknown",
                 };
 
                 var packagesCountLabel = settings.IncludePackages!.Value
-                    ? $"/[royalblue1]{descendants.OfType<PackageReferenceNode>().Count()}[/]"
+                    ? $"/[royalblue1]{packageDescendants.Count}[/]"
                     : string.Empty;
 
                 var descendantsLabel = node.Type is not NodeConstants.Package
-                    ? $"[darkgreen]{descendants.OfType<ProjectReferenceNode>().Count()}{packagesCountLabel}[/]"
+                    ? $"[darkgreen]{projectDescendants.Count}{packagesCountLabel}[/]"
                     : string.Empty;
 
-                var ascendantsLabel = $"[darkgreen]{ascendantsCount}[/]";
+                var ascendantsLabel = $"[darkgreen]{projectAscendants.Count}[/]";
                 table.AddRow(node.Id, type, descendantsLabel, ascendantsLabel, displayPath);
             }
 
@@ -157,7 +159,7 @@ internal class ScanCommand(
     }
 }
 
-internal class ScanCommandSettings : BaseAnalyzeCommandSettings
+internal sealed class ScanCommandSettings : BaseAnalyzeCommandSettings
 {
     [CommandOption("--full-scan")]
     public bool? FullScan { get; set; } = false;

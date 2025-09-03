@@ -10,12 +10,18 @@ app.Configure(config =>
         c =>
         {
             c.AddCommand<ScanCommand>("scan")
-                .WithDescription("Scans for projects and solutions and retrives their dependencies")
-                .WithExample("graph", "scan", "./path/to/folder", "--framework", "net8");
+                .WithDescription(
+                    "Recursively scans for all projects and solutions, providing a high-level overview with dependency statistics. Use for analyzing entire repositories or getting an overview of multiple solutions."
+                )
+                .WithExample("graph", "scan", "./path/to/folder", "--framework", "net8", "--full-scan")
+                .WithExample("graph", "scan", "./path/to/folder", "--include-packages", "--exclude-sln");
 
             c.AddCommand<ShowCommand>("show")
-                .WithDescription("Shows the dependencies of a project or solution located in the specified path")
-                .WithExample("graph", "show", "./path/to/project", "--framework", "net8");
+                .WithDescription(
+                    "Shows detailed dependency tree visualization for a single project or solution. Use for deep-diving into specific dependency chains."
+                )
+                .WithExample("graph", "show", "./path/to/project", "--framework", "net8", "--display", "tree")
+                .WithExample("graph", "show", "./path/to/solution", "--display", "box");
         }
     );
 
@@ -32,7 +38,9 @@ if (args.Length == 0)
     WelcomeMessage.Print(configuration);
 }
 
-return app.Run(args);
+var exitCode = app.Run(args);
+
+return exitCode;
 
 TypeRegistrar ConfigureServices(out IConfiguration configuration)
 {

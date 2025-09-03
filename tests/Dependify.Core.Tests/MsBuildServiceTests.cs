@@ -4,10 +4,10 @@ using Dependify.Core;
 using Dependify.Core.Graph;
 using Microsoft.Extensions.DependencyInjection;
 
-public class UnitTest1
+public class MsBuildServiceTests
 {
     [Fact(Skip = "Requires a file system seed")]
-    public void MsBuildServiceTests()
+    public void Run()
     {
         var services = new ServiceCollection()
             .AddLogging()

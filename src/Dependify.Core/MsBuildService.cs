@@ -27,10 +27,45 @@ public class MsBuildService : IDisposable
         this.logger.LogInformation("Analyzing solution {Solution}", solution.Path);
         this.subject.OnNext(new NodeEvent(NodeEventType.SolutionLoading, solution.Id, solution.Path));
 
-        var analyzerManager = new AnalyzerManager(
-            solution.Path,
-            new AnalyzerManagerOptions { LoggerFactory = this.loggerFactory, }
-        );
+        AnalyzerManager analyzerManager;
+        try
+        {
+            analyzerManager = new AnalyzerManager(
+                solution.Path,
+                new AnalyzerManagerOptions { LoggerFactory = this.loggerFactory }
+            );
+        }
+        catch (Exception ex)
+        {
+            this.logger.LogError(ex, "Failed to create AnalyzerManager for solution {Solution}", solution.Path);
+
+            // Try slnx parsing fallback for XML format solutions
+            if (solution.IsXmlFormat)
+            {
+                var fallbackProjects = this.TryParseProjectsFromSlnx(solution.Path);
+                if (fallbackProjects.Count > 0)
+                {
+                    var projectNodes = fallbackProjects.Select(path => new ProjectReferenceNode(path));
+                    var fallbackBuilder = new DependencyGraph.Builder(solution);
+
+                    // Analyze each project with the correct solution node as root
+                    this.AnalyzeReferencesCore(fallbackBuilder, projectNodes, config);
+
+                    // Connect solution to top-level projects
+                    foreach (var projectPath in fallbackProjects)
+                    {
+                        var projectNode = new ProjectReferenceNode(projectPath);
+                        fallbackBuilder.WithEdge(new Edge(solution, projectNode));
+                    }
+
+                    return fallbackBuilder.Build();
+                }
+            }
+
+            // Return empty graph with just the solution node
+            var emptyBuilder = new DependencyGraph.Builder(solution);
+            return emptyBuilder.Build();
+        }
 
         var builder = new DependencyGraph.Builder(solution);
 
@@ -51,7 +86,7 @@ public class MsBuildService : IDisposable
             List<ProjectReferenceNode> nodesToScan;
             do
             {
-                nodesToScan = builder.GetNotScannedNodes().OfType<ProjectReferenceNode>().ToList();
+                nodesToScan = [.. builder.GetNotScannedNodes().OfType<ProjectReferenceNode>()];
 
                 this.AnalyzeReferencesCore(builder, nodesToScan, config);
             } while (nodesToScan.Count > 0);
@@ -87,13 +122,16 @@ public class MsBuildService : IDisposable
         MsBuildConfig config
     )
     {
+#pragma warning disable CA1851 // Possible multiple enumerations of 'IEnumerable' collection
         if (!nodes.Any())
         {
             return;
         }
+#pragma warning restore CA1851 // Possible multiple enumerations of 'IEnumerable' collection
 
-        var analyzerManager = new AnalyzerManager(new AnalyzerManagerOptions { LoggerFactory = this.loggerFactory, });
+        var analyzerManager = new AnalyzerManager(new AnalyzerManagerOptions { LoggerFactory = this.loggerFactory });
 
+#pragma warning disable CA1851 // Possible multiple enumerations of 'IEnumerable' collection
         foreach (var path in nodes.Select(n => n.Path))
         {
             var projectNode = new ProjectReferenceNode(path);
@@ -101,13 +139,14 @@ public class MsBuildService : IDisposable
 
             this.AddDependenciesToGraph(builder, project, projectNode, config);
         }
+#pragma warning restore CA1851 // Possible multiple enumerations of 'IEnumerable' collection
 
         if (config.FullScan)
         {
             List<ProjectReferenceNode> nodesToScan;
             do
             {
-                nodesToScan = builder.GetNotScannedNodes().OfType<ProjectReferenceNode>().ToList();
+                nodesToScan = [.. builder.GetNotScannedNodes().OfType<ProjectReferenceNode>()];
 
                 this.AnalyzeReferencesCore(builder, nodesToScan, config);
             } while (nodesToScan.Count > 0);
@@ -135,7 +174,68 @@ public class MsBuildService : IDisposable
             ? analyzeResults.FirstOrDefault()
             : analyzeResults[framework];
 
-        _ = analyzerResult ?? throw new InvalidOperationException("Unable to load project.");
+        if (analyzerResult is null)
+        {
+            this.logger.LogWarning(
+                "Failed to analyze project {Project} with framework {Framework}",
+                projectNode.Path,
+                framework ?? "default"
+            );
+            this.subject.OnNext(
+                new NodeEvent(NodeEventType.ProjectFailed, projectNode.Id, projectNode.Path)
+                {
+                    Message = $"Failed to analyze project: {projectNode.Path}",
+                }
+            );
+
+            // Try fallback: analyze without framework constraint if we originally tried with one
+            if (!string.IsNullOrEmpty(framework))
+            {
+                this.logger.LogInformation(
+                    "Attempting fallback analysis without framework constraint for {Project}",
+                    projectNode.Path
+                );
+                var fallbackResults = projectAnalyzer.Build();
+                analyzerResult = fallbackResults.FirstOrDefault();
+
+                if (analyzerResult is not null)
+                {
+                    this.logger.LogInformation("Fallback analysis succeeded for {Project}", projectNode.Path);
+                }
+            }
+
+            // If still null after fallback attempts, try XML parsing as last resort
+            if (analyzerResult is null)
+            {
+                this.logger.LogInformation("Attempting XML parsing fallback for {Project}", projectNode.Path);
+                var xmlReferences = this.TryParseProjectReferencesFromXml(projectNode.Path);
+
+                if (xmlReferences.Count > 0)
+                {
+                    this.logger.LogInformation(
+                        "XML parsing found {Count} project references for {Project}",
+                        xmlReferences.Count,
+                        projectNode.Path
+                    );
+
+                    this.subject.OnNext(new NodeEvent(NodeEventType.ProjectLoaded, projectNode.Id, projectNode.Path));
+                    builder.WithNode(projectNode, true);
+
+                    // Add only project references from XML parsing (no package references available)
+                    foreach (var reference in xmlReferences)
+                    {
+                        var referenceNode = new ProjectReferenceNode(reference);
+                        builder.WithNode(referenceNode);
+                        builder.WithEdge(new Edge(projectNode, referenceNode));
+                    }
+
+                    return;
+                }
+
+                this.logger.LogError("All analysis methods failed for project {Project}, skipping", projectNode.Path);
+                return;
+            }
+        }
 
         this.subject.OnNext(new NodeEvent(NodeEventType.ProjectLoaded, projectNode.Id, projectNode.Path));
 
@@ -161,9 +261,98 @@ public class MsBuildService : IDisposable
         }
     }
 
+    private List<string> TryParseProjectReferencesFromXml(string projectPath)
+    {
+        var references = new List<string>();
+
+        try
+        {
+            if (!File.Exists(projectPath))
+            {
+                return references;
+            }
+
+            var projectDir = Path.GetDirectoryName(projectPath) ?? string.Empty;
+            var doc = System.Xml.Linq.XDocument.Load(projectPath);
+
+            var projectReferences = doc.Descendants("ProjectReference")
+                .Where(pr => pr.Attribute("Include") is not null)
+                .Select(pr => pr.Attribute("Include")!.Value)
+                .Where(path => !string.IsNullOrWhiteSpace(path));
+
+            foreach (var reference in projectReferences)
+            {
+                // Convert relative paths to absolute paths
+                var absolutePath = Path.IsPathRooted(reference)
+                    ? reference
+                    : Path.GetFullPath(Path.Combine(projectDir, reference));
+
+                if (File.Exists(absolutePath))
+                {
+                    references.Add(absolutePath);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            this.logger.LogWarning(ex, "Failed to parse project references from XML for {Project}", projectPath);
+        }
+
+        return references;
+    }
+
+    private List<string> TryParseProjectsFromSlnx(string solutionPath)
+    {
+        var projects = new List<string>();
+
+        try
+        {
+            if (!File.Exists(solutionPath))
+            {
+                return projects;
+            }
+
+            var solutionDir = Path.GetDirectoryName(solutionPath) ?? string.Empty;
+            var doc = System.Xml.Linq.XDocument.Load(solutionPath);
+
+            var projectPaths = doc.Descendants("Project")
+                .Where(p => p.Attribute("Path") is not null)
+                .Select(p => p.Attribute("Path")!.Value)
+                .Where(path => !string.IsNullOrWhiteSpace(path));
+
+            foreach (var projectPath in projectPaths)
+            {
+                var absolutePath = Path.IsPathRooted(projectPath)
+                    ? projectPath
+                    : Path.GetFullPath(Path.Combine(solutionDir, projectPath));
+
+                if (File.Exists(absolutePath))
+                {
+                    projects.Add(absolutePath);
+                }
+            }
+        }
+        catch
+        {
+            // Ignore parsing errors
+        }
+
+        return projects;
+    }
+
     public void Dispose()
     {
-        this.subject.OnCompleted();
+        this.Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            this.subject.OnCompleted();
+            this.subject.Dispose();
+        }
     }
 }
 
@@ -180,10 +369,11 @@ public enum NodeEventType
 {
     ProjectLoading,
     ProjectLoaded,
+    ProjectFailed,
     SolutionLoading,
     SolutionLoaded,
     RegistryLoaded,
-    Other
+    Other,
 }
 
 public record MsBuildConfig

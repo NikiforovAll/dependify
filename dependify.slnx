@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Dependify.Aspire.Hosting.Ollama/Dependify.Aspire.Hosting.Ollama.csproj" />
+    <Project Path="src/Dependify.Aspire.Hosting/Dependify.Aspire.Hosting.csproj" />
+    <Project Path="src/Dependify.Cli/Dependify.Cli.csproj" />
+    <Project Path="src/Dependify.Core/Dependify.Core.csproj" />
+    <Project Path="src/Web/Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Dependify.Core.Tests/Dependify.Core.Tests.csproj" />
+  </Folder>
+</Solution>
