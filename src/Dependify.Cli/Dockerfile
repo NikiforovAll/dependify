@@ -1,7 +1,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /source
 
-COPY *.sln .
+COPY *.slnx .
 COPY Directory.Build.props Directory.Build.props
 COPY src/Directory.Build.props src/Directory.Build.props
 COPY src/Directory.Packages.props src/Directory.Packages.props
