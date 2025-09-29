@@ -24,6 +24,24 @@ public class MsBuildService : IDisposable
 
     public DependencyGraph AnalyzeReferences(SolutionReferenceNode solution, MsBuildConfig config)
     {
+        return this.AnalyzeReferencesCore(solution, config, null);
+    }
+
+    public DependencyGraph AnalyzeReferencesWithCache(
+        SolutionReferenceNode solution,
+        MsBuildConfig config,
+        DependencyGraph cache
+    )
+    {
+        return this.AnalyzeReferencesCore(solution, config, cache);
+    }
+
+    private DependencyGraph AnalyzeReferencesCore(
+        SolutionReferenceNode solution,
+        MsBuildConfig config,
+        DependencyGraph? cache
+    )
+    {
         this.logger.LogInformation("Analyzing solution {Solution}", solution.Path);
         this.subject.OnNext(new NodeEvent(NodeEventType.SolutionLoading, solution.Id, solution.Path));
 
@@ -75,10 +93,18 @@ public class MsBuildService : IDisposable
 
         foreach (var project in projects)
         {
-            var projectNode = new ProjectReferenceNode(project.Key);
-            builder.WithEdge(new Edge(builder.Root, projectNode));
+            var projectNode = new ProjectReferenceNode(project.Value.ProjectFile.Path);
 
-            this.AddDependenciesToGraph(builder, project.Value, projectNode, config);
+            if (cache is not null && cache.Nodes.Contains(projectNode))
+            {
+                this.CopyFromCache(builder, cache, projectNode);
+            }
+            else
+            {
+                builder.WithEdge(new Edge(builder.Root, projectNode));
+
+                this.AddDependenciesToGraph(builder, project.Value, projectNode, config);
+            }
         }
 
         if (config.FullScan)
@@ -88,7 +114,7 @@ public class MsBuildService : IDisposable
             {
                 nodesToScan = [.. builder.GetNotScannedNodes().OfType<ProjectReferenceNode>()];
 
-                this.AnalyzeReferencesCore(builder, nodesToScan, config);
+                this.AnalyzeReferencesCore(builder, nodesToScan, config, cache);
             } while (nodesToScan.Count > 0);
         }
 
@@ -102,7 +128,7 @@ public class MsBuildService : IDisposable
     {
         var builder = new DependencyGraph.Builder(node);
 
-        this.AnalyzeReferencesCore(builder, [node], config);
+        this.AnalyzeReferencesCore(builder, [node], config, null);
 
         return builder.Build();
     }
@@ -111,7 +137,7 @@ public class MsBuildService : IDisposable
     {
         var builder = new DependencyGraph.Builder(new SolutionReferenceNode());
 
-        this.AnalyzeReferencesCore(builder, nodes, config);
+        this.AnalyzeReferencesCore(builder, nodes, config, null);
 
         return builder.Build();
     }
@@ -119,7 +145,8 @@ public class MsBuildService : IDisposable
     private void AnalyzeReferencesCore(
         DependencyGraph.Builder builder,
         IEnumerable<ProjectReferenceNode> nodes,
-        MsBuildConfig config
+        MsBuildConfig config,
+        DependencyGraph? cache
     )
     {
 #pragma warning disable CA1851 // Possible multiple enumerations of 'IEnumerable' collection
@@ -135,9 +162,17 @@ public class MsBuildService : IDisposable
         foreach (var path in nodes.Select(n => n.Path))
         {
             var projectNode = new ProjectReferenceNode(path);
-            var project = analyzerManager.GetProject(path);
 
-            this.AddDependenciesToGraph(builder, project, projectNode, config);
+            if (cache is not null && cache.Nodes.Contains(projectNode))
+            {
+                this.CopyFromCache(builder, cache, projectNode);
+            }
+            else
+            {
+                var project = analyzerManager.GetProject(path);
+
+                this.AddDependenciesToGraph(builder, project, projectNode, config);
+            }
         }
 #pragma warning restore CA1851 // Possible multiple enumerations of 'IEnumerable' collection
 
@@ -148,8 +183,25 @@ public class MsBuildService : IDisposable
             {
                 nodesToScan = [.. builder.GetNotScannedNodes().OfType<ProjectReferenceNode>()];
 
-                this.AnalyzeReferencesCore(builder, nodesToScan, config);
+                this.AnalyzeReferencesCore(builder, nodesToScan, config, cache);
             } while (nodesToScan.Count > 0);
+        }
+    }
+
+    private void CopyFromCache(DependencyGraph.Builder builder, DependencyGraph cache, ProjectReferenceNode projectNode)
+    {
+        var subgraph = cache.SubGraph(projectNode);
+
+        this.logger.LogInformation("Loaded project {Project} from cache", projectNode.Path);
+
+        foreach (var node in subgraph.Nodes)
+        {
+            builder.WithNode(node, scanned: true);
+        }
+
+        foreach (var edge in subgraph.Edges)
+        {
+            builder.WithEdge(edge);
         }
     }
 
